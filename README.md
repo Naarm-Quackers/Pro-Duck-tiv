@@ -7,5 +7,5 @@ npm -v
 Should print "11.12.1".
 
 To clone the Project in desired folder run these commands in the terminal
-git clone [http url]
+git clone (http url)
 cd 
