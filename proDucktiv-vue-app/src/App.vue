@@ -1,7 +1,7 @@
 <script setup>
-
+  import Menu from './components/Menu.vue'
 </script>
-
 <template>
-  <h1>Hello This is a test</h1>
+  <Menu />
+  <router-view />
 </template>
