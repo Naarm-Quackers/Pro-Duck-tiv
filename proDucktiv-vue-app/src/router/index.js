@@ -8,6 +8,7 @@ import Task from '../views/Task.vue'
 import TaskCreator from '../views/TaskCreator.vue'
 import TaskEditor from '../views/TaskEditor.vue'
 import Calendar from '../views/Calendar.vue'
+import Journal from '../views/Journal.vue'
 
 const routes = [
     { path: '/', component: Welcome },
@@ -19,6 +20,7 @@ const routes = [
     { path: '/task-creator', component: TaskCreator },
     { path: '/task-editor', component: TaskEditor },
     { path: '/calendar', component: Calendar },
+    { path: '/journal', component: Journal }
 ]
 
 const router = createRouter({

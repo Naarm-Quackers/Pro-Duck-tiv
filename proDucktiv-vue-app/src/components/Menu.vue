@@ -19,6 +19,9 @@
                 <router-link to="/task-creator">Task Creator</router-link>
                 <span> | </span>
                 <router-link to="/task-editor">Task Editor</router-link>
+                <span> | </span>
+                <router-link to="/journal">Journal</router-link>
+
             </nav>
             <hr>
         </div>
