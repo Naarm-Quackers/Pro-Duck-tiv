@@ -25,6 +25,26 @@ If you don’t have a personal access token for this organisations repo one can 
 - Select the Pro-Duck-tiv repo
 - Then add Read and Write Repository permissions for actions, contents, issues, pull requests, and workflows (meta data will be added automatically) plus any extra permissions you think you would need.
 
+## Current Tasks
+### Adam:
+- [ ] Welcome
+- [ ] Task Editor
+
+### Amy:
+- [ ] Task Creation
+
+### Eilia:
+- [ ] About
+- [ ] Calendar
+
+### Dylan:
+- [ ] Registration
+- [ ] Sign Up
+
+### Justin:
+- [ ] Journal
+- [ ] Account
+
 ## Assigned Roles
 
 ### Adam: 
