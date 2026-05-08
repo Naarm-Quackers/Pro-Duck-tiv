@@ -1,9 +1,21 @@
-<script setup></script>
+<script setup>
+import LogoDark from "../assets/DarkLogo.svg";
+import LogoLight from "../assets/LightLogo.svg";
+</script>
 <template>
     <div class="container">
         <div class="row">
-            <div class="col-2"></div>
-            <div class="col-10 text-center">
+            <div class="col-3">
+                <img
+                    @click="toggleDarkMode"
+                    :src="isDarkMode ? LogoDark : LogoLight"
+                    alt="ProDucktiv Logo"
+                    width="100%"
+                />
+            </div>
+            <div
+                class="col-9 text-start justify-content-center align-items-center"
+            >
                 <h1 id="title">About ProDucktiv</h1>
             </div>
         </div>
@@ -18,7 +30,7 @@
                 </p>
             </div>
             <div class="col">
-                <img src="" alt="ProDucktiv Mascot" />
+                <img src="" alt="Planner image" />
             </div>
             <hr />
         </div>
@@ -117,3 +129,17 @@
         <hr />
     </div>
 </template>
+<script>
+export default {
+    data() {
+        return {
+            isDarkMode: true,
+        };
+    },
+    methods: {
+        toggleDarkMode() {
+            this.isDarkMode = !this.isDarkMode;
+        },
+    },
+};
+</script>
