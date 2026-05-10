@@ -1,6 +1,6 @@
 <script setup>
-import LogoDark from "../assets/DarkLogo.svg";
-import LogoLight from "../assets/LightLogo.svg";
+import LogoDark from "../assets/images/DarkLogo.svg";
+import LogoLight from "../assets/images/LightLogo.svg";
 </script>
 <template>
     <div class="container">
