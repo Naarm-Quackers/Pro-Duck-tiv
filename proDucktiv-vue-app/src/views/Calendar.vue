@@ -72,13 +72,15 @@ import monthData from "../assets/data/calendarMonthData.json";
                         <thead>
                             <tr>
                                 <th scope="col">Time</th>
-                                <th scope="col">Monday</th>
-                                <th scope="col">Tuesday</th>
-                                <th scope="col">Wednesday</th>
-                                <th scope="col">Thursday</th>
-                                <th scope="col">Friday</th>
-                                <th scope="col">Saturday</th>
-                                <th scope="col">Sunday</th>
+                                <th scope="col" v-for="day in getWeekArray()">
+                                    {{
+                                        day
+                                            .toDateString()
+                                            .split(" ")
+                                            .slice(0, 3)
+                                            .join(" ")
+                                    }}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -119,9 +121,9 @@ import monthData from "../assets/data/calendarMonthData.json";
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(week, wi) in weeks()">
+                            <tr v-for="(week, wi) in getPaddedMonthArray()">
                                 <td v-for="(day, di) in week">
-                                    {{ day || "" }}
+                                    {{ day?.getDate() || "" }}
                                 </td>
                             </tr>
                         </tbody>
@@ -228,12 +230,25 @@ export default {
                 0,
             );
         },
-        // Out put a weeks array that calaculate the weeks in each month
-        // each week is an array of 7 days (mon-sun)
-        // with null padding for empty days in a week
-        weeks() {
-            // total days in the month
-            const totalDays = this.getTotalDaysInMonth();
+
+        // returns Array of selectedDates Current month
+        getMonthArray() {
+            const totalMonthDays = this.getTotalDaysInMonth();
+            const monthArray = [];
+            for (let i = 0; i < totalMonthDays; i += 1) {
+                monthArray.push(
+                    new Date(
+                        this.selectedDate.getFullYear(),
+                        this.selectedDate.getMonth(),
+                        1 + i,
+                    ),
+                );
+            }
+            return monthArray;
+        },
+        // reutrns padded month array with week split
+        getPaddedMonthArray() {
+            const monthArray = this.getMonthArray();
             // get the first day in selected month
             const firstDay = this.getMonthFirstDay();
             // get the last day in selected month
@@ -244,28 +259,52 @@ export default {
             // so we can use a remainder or modulo operator % to off set
             // this way it fits our mon-sun week order
             // thus monday (1) -> (1 + 6) = 7 -> 7 % 7  = 0
-            const startWeekOffset = (firstDay.getDay() + 6) % 7;
-            // last day off set
-            const lastDayMonStart = (lastDay.getDay() + 6) % 7;
-            const endWeekOffset =
-                lastDayMonStart === 6 ? 0 : 6 - lastDayMonStart;
-            // month array with null padding using the first day as an off set
-            const month = [
-                // the ... spread operator merges the nested ar0rays into 1
-                // uses the firstday to add null padding to the month array
-                ...Array(startWeekOffset).fill(null),
-                // creates an array with the length of the total month days
-                // (_, i) is a mapping function the _ is the current value
-                // since we are using a integer and not an array we use _ to mean undefined
-                ...Array.from({ length: totalDays }, (_, i) => i + 1),
-                ...Array(endWeekOffset).fill(null),
+            // Offset padding for start of month
+            const firstWeekOffset = (firstDay.getDay() + 6) % 7;
+            // Offset padding for end of month
+            const lastWeekOffset = (lastDay.getDay() + 6) % 7;
+            const endMonthOffset =
+                lastWeekOffset === 0 ? 0 : 6 - lastWeekOffset;
+
+            const paddedMonthArray = [
+                // the ... spread operator merges the nested arrays into 1
+                ...Array(firstWeekOffset).fill(null),
+                ...monthArray,
+                ...Array(endMonthOffset).fill(null),
             ];
+
             // split the month array into diffrent rows of 7
-            const weeks = [];
-            for (let i = 0; i < month.length; i += 7) {
-                weeks.push(month.slice(i, i + 7));
+            const weekSplitMonth = [];
+            for (let i = 0; i < paddedMonthArray.length; i += 7) {
+                weekSplitMonth.push(paddedMonthArray.slice(i, i + 7));
             }
-            return weeks;
+            return weekSplitMonth;
+        },
+        // get the monday for selected day for week view
+        getWeekMonday() {
+            // 0(sun) - 6(sat)
+            const day = this.selectedDate.getDay();
+            const dayOffset = (day + 6) % 7;
+            return new Date(
+                this.selectedDate.getFullYear(),
+                this.selectedDate.getMonth(),
+                this.selectedDate.getDate() - dayOffset,
+            );
+        },
+        // Week Array based off selected date
+        getWeekArray() {
+            const monday = this.getWeekMonday();
+            const weekArray = [];
+            for (let i = 0; i < 7; i += 1) {
+                weekArray.push(
+                    new Date(
+                        monday.getFullYear(),
+                        monday.getMonth(),
+                        monday.getDate() + i,
+                    ),
+                );
+            }
+            return weekArray;
         },
     },
 };
