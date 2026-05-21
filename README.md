@@ -69,11 +69,10 @@ If you don’t have a personal access token for this organisations repo one can 
 
 ## Database Tables Info
 - "Table element name" - table element long name, type, [attributes]
-### "UserInfo" Table:
-- "uID" - User ID, number, [unique, automatically generated]
-- "username" - Login name, string, [unique, max-15]
-- "pwd" - Password, password, [min-8, include capital letter, include special characters]
-- "pwd2"    - Confirmation password, password, [identical to pwd]
-- "fName"   - First name, string, [no numbers]
-- "lName"   - Last name, string, [no numbers]
-- "dob"     - Date of birth, date, [not in the future]
+### "pdt_users" Table:
+- "user_id"             - User ID, number, [unique, automatically generated]
+- "user_name"           - Username, text, [unique, min-3]
+- "user_password"       - Password, password, [min-8, include capital letter, include special characters]
+- "user_first_name"     - First name, text, [letters only]
+- "user_last_name"      - Last name, text, [letters only]
+- "user_date_of_birth"  - Date of birth, date, [not in the future, optional]
