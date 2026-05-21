@@ -3,8 +3,9 @@
 * Useful for making elements like titles, headings look the same.
 */
 
-/* Heading */
+/* PAGE TITLE */
 #Header {
   margin: 0% 0% 2% 0%;;
   padding: 2% 0% 2% 5%;
+  text-align: center;
 }

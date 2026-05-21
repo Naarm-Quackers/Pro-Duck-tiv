@@ -1,12 +1,12 @@
 <template>
-    <section id="Header">
-        <h1>Registration Form</h1>
-    </section>
+    <div class="container">
+        <section id="Header" class="row">
+            <h1 class="col-12">Registration Form</h1>
+        </section>
     
-    <div class='container'>
         <form id="jobForm" method="post" action="" onsubmit="return validateForm()">
             <fieldset>
-                <h4 class="sectionTitle">Login Details</h4>
+                <h4 class="sectionTitle">Login Details:</h4>
                 <div class="row">
                     <div class="col-6">
                     <!-- fName -- Letters only, required. -->
