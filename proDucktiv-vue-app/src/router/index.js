@@ -1,14 +1,14 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import Welcome from '../views/Welcome.vue'
-import About from '../views/About.vue'
-import SignIn from '../views/SignIn.vue'
-import Registration from '../views/Registration.vue'
-import Account from '../views/Account.vue'
-import Task from '../views/Task.vue'
-import TaskCreator from '../views/TaskCreator.vue'
-import TaskEditor from '../views/TaskEditor.vue'
-import Calendar from '../views/Calendar.vue'
-import Journal from '../views/Journal.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import Welcome from "../views/Welcome.vue";
+import About from "../views/About.vue";
+import SignIn from "../views/SignIn.vue";
+import Registration from "../views/Registration.vue";
+import Account from "../views/Account.vue";
+import Task from "../views/Task.vue";
+import TaskCreator from "../views/TaskCreator.vue";
+import TaskEditor from "../views/TaskEditor.vue";
+import Calendar from "../views/Calendar.vue";
+import Journal from "../views/Journal.vue";
 
 const routes = [
     { path: '/', component: Welcome },
@@ -24,7 +24,7 @@ const routes = [
 ]
 
 const router = createRouter({
-        history: createWebHistory(),
-    routes,
-})
-export default router
+  history: createWebHistory(),
+  routes,
+});
+export default router;
