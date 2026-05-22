@@ -1,15 +1,7 @@
-<script setup>
-import LogoDark from "../assets/images/DarkLogo.svg";
-import LogoLight from "../assets/images/LightLogo.svg";
-</script>
 <template>
     <div class="container">
         <div class="row">
-            <div class="col-3 p-3">
-                <img @click="toggleDarkMode" :src="isDarkMode ? LogoDark : LogoLight" alt="ProDucktiv Logo"
-                    width="80%" />
-            </div>
-            <div class="col-6 text-center p-3">
+            <div class="col-12 text-center p-3">
                 <h1 id="title">About ProDucktiv</h1>
             </div>
         </div>

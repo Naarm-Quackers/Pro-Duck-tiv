@@ -1,15 +1,7 @@
-<script setup>
-import LogoDark from "../assets/images/DarkLogo.svg";
-import LogoLight from "../assets/images/LightLogo.svg";
-</script>
 <template>
     <div class='container'>
         <div class="row py-2">
-            <div class="col-3">
-                <img @click="toggleDarkMode" :src="isDarkMode ? LogoDark : LogoLight" alt="ProDucktiv Logo"
-                    width="80%" />
-            </div>
-            <div class="col-6 text-center">
+            <div class="col-12 text-center">
                 <h1>Calendar</h1>
             </div>
         </div>
@@ -57,8 +49,7 @@ import LogoLight from "../assets/images/LightLogo.svg";
             </div>
         </div>
         <div class="row">
-            <table
-                :class="isDarkMode ? 'table table-bordered table-hover table-dark' : 'table table-bordered table-hover'">
+            <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
                         <th scope="col" class="col-1">Time</th>
@@ -103,7 +94,7 @@ import LogoLight from "../assets/images/LightLogo.svg";
             </div>
         </div>
         <div class="table-responsive">
-            <table :class="isDarkMode ? 'table table-bordered table-dark' : 'table table-bordered '">
+            <table class="table table-bordered">
                 <thead>
                     <tr>
                         <th scope="col" class="col-1">Time</th>
@@ -167,7 +158,7 @@ import LogoLight from "../assets/images/LightLogo.svg";
             </div>
         </div>
         <div class="table-responsive">
-            <table :class="isDarkMode ? 'table table-bordered  table-dark' : 'table table-bordered'">
+            <table class="table table-bordered'">
                 <caption class="text-center caption-top">
                     {{ getMonthName(selectedDate?.getMonth()) }}
                 </caption>
@@ -209,6 +200,8 @@ export default {
             selectedDate: new Date(), // must be stored as date object
             task: null, // stores task information start and due dates
             isDarkMode: true,
+            isBirthday: false,
+            dayTimeData: dayTimeData,
         };
     },
     computed: {
@@ -373,6 +366,7 @@ export default {
             this.checkSelectedDate(weekArray);
             return weekArray;
         },
+        // check if the date is selected and set is seleceted to true
         checkSelectedDate(dateArray) {
             for (let i = 0; i < dateArray.length; i += 1) {
                 if (dateArray[i] === null) continue;
@@ -394,41 +388,9 @@ export default {
             // recall to update the array
             this.getPaddedMonthArray();
         },
-        // returns an array of minutes in a day
-        getDayTimeArray() {
-
-        }
+        // check if birthday
+        //
     },
 };
 </script>
-<style>
-.day-cell:hover {
-    background-color: var(--bs-success);
-    border-color: var(--bs-success);
-    opacity: 0.5;
-    transition: ease 0.5s;
-}
-
-.button-calendar-view:hover {
-    background-color: var(--bs-success);
-    border-color: var(--bs-success);
-    opacity: 0.5;
-    transition: ease 0.5s;
-}
-
-.button-change-date:hover {
-    background-color: var(--bs-success);
-    border-color: var(--bs-success);
-    transition: ease 0.5s;
-}
-
-.month-calendar-head {
-    width: 200px;
-    text-align: center;
-}
-
-.month-calendar-body {
-    width: 250px;
-    height: 130px;
-}
-</style>
+<style></style>
