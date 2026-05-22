@@ -1,84 +1,112 @@
 <template>
-    <div class="container">
-        <section id="Header" class="row">
-            <h1 class="col-12">Registration Form</h1>
-        </section>
-
-
-        <form id="jobForm" @submit.prevent="submitForm">
-            <fieldset class="card p-2 mb-5 shadow rounded bg-body">
-                <h4 class="sectionTitle">User Details:</h4>
-
-                <!-- fName -- user_first_name -- Text -- Letters only. -->
-                <div class="mb-3 row">
-                    <label for="fName" class="col-sm-3 col-form-label">First Name:</label>
-                    <div class="col-sm-9">
-                        <input v-model="form.fName" type="text" class="form-control" id="fName" name="fName">
-                        <span id="fNameError" class="text-danger"></span>
-                    </div>
+    <v-container class="py-10">
+        <v-row justify="center">
+            <v-col cols="12" md="8" lg="6">
+                <div class="text-center mb-8">
+                    <h1 class="text-h3 font-weight-bold">Registration Form</h1>
+                    <p class="text-body-2 text-medium-emphasis mt-2">Create your account below</p>
                 </div>
 
-                <!-- lName -- user_last_name -- Text -- Letters only. -->
-                <div class="mb-3 row">
-                    <label for="lName" class="col-sm-3 col-form-label">Last Name:</label>
-                    <div class="col-sm-9">
-                        <input v-model="form.lName" type="text" class="form-control" id="lName" name="lName">
-                        <span id="lNameError" class="text-danger"></span>
-                    </div>
-                </div>
+                <v-form ref="regFormRef" v-model="isValid" @submit.prevent="submitForm">
+                    <v-card class="pa-6" elevation="8" rounded="x1">
+                        <h4 class="text-h6 font-weight-bold mb-6">User Details</h4>
 
-                <!-- bDay -- user_date_of_birth -- Date -- Must be a valid date. -->
-                <div class="mb-3 row">
-                    <label for="bDay" class="col-sm-3 col-form-label">Date of Birth:</label>
-                    <div class="col-sm-9">
-                        <input v-model="form.bDay" type="date" class="form-control" id="bDay" name="bDay">
-                        <span id="bDayError" class="text-danger"></span>
-                    </div>
-                </div>
-            </fieldset>
+                        <v-row dense justify="center">
+                            <!-- fName -- user_first_name -- Text -- Letters only. -->
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                v-model="form.fName"
+                                label="First Name"
+                                type="text"
+                                variant="outlined"
+                                density="comfortable"
+                                :rules="[rules.required, rules.lettersOnly]"
+                                />
+                            </v-col>
 
+                            <!-- lName -- user_last_name -- Text -- Letters only. -->
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                v-model="form.lName"
+                                label="Last Name"
+                                type="text"
+                                variant="outlined"
+                                density="comfortable"
+                                :rules="[rules.required, rules.lettersOnly]"
+                                />
+                            </v-col>
 
-            <fieldset class="card p-2 shadow rounded bg-body">
-                <h4 class="sectionTitle">Login Details:</h4>
+                            <!-- bDay -- user_date_of_birth -- Date -- Must be a valid date. -->
+                            <v-col cols="12" md="5" class="d-flex justify-center">
+                                <v-text-field
+                                v-model="form.bDay"
+                                label="Date Of Birth"
+                                type="date"
+                                variant="outlined"
+                                density="comfortable"
+                                :rules="[rules.required]"
+                                />                                
+                            </v-col>
 
-                <!-- uName  -- Text -- Unique, min 3. -->
-                <div class="mb-3 row">
-                    <label for="uName" class="col-sm-3 col-form-label">Username:</label>
-                    <div class="col-sm-9">
-                        <input v-model="form.uName" type="text" class="form-control" id="uName" name="uName">
-                        <span id="uNameError" class="text-danger"></span>
-                    </div>
-                </div>
+                            <!-- uName  -- Text -- Unique, min 3. -->
+                            <v-col cols="12">
+                                <v-text-field
+                                v-model="form.uName"
+                                label="Username"
+                                type="text"
+                                variant="outlined"
+                                density="comfortable"
+                                :rules="[rules.required, rules.min3]"
+                                />            
+                            </v-col>
 
-                <!-- pwd -- Password -- Min-8, must include at least one special character. -->
-                <div class="mb-3 row">
-                    <label for="pwd" class="col-sm-3 col-form-label">Password:</label>
-                    <div class="col-sm-9">
-                        <input v-model="form.pwd" type="password" class="form-control" id="pwd" name="pwd">
-                        <span id="pwdError" class="text-danger"></span>
-                    </div>
-                </div>
+                            <!-- pwd -- Password -- Min-8, must include at least one special character. -->
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                v-model="form.pwd"
+                                label="Password"
+                                type="password"
+                                variant="outlined"
+                                density="comfortable"
+                                :rules="[rules.required, rules.password]"
+                                />            
+                            </v-col>
 
-                <!-- pwd2 -- Password -- Must be identical to pwd. -->
-                <div class="mb-3 row">
-                    <label for="pwd2" class="col-sm-3 col-form-label">Confirm Password:</label>
-                    <div class="col-sm-9">
-                        <input v-model="form.pwd2" type="password" class="form-control" id="pwd2" name="pwd2">
-                        <span id="pdw2Error" class="text-danger"></span>
-                    </div>
-                </div>
-            </fieldset>
+                            <!-- pwd2 -- Password -- Must be identical to pwd. -->
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                v-model="form.pwd2"
+                                label="Confirm Password"
+                                type="password"
+                                variant="outlined"
+                                density="comfortable"
+                                :rules="[rules.required, rules.matchPassword]"
+                                />
+                            </v-col>
 
-
-            <div class="mt-3 d-flex justify-content-center">
-                <input type="submit" id="SubmitButton" class="btn btn-primary" value="Submit">
-            </div>
-        </form>
-    </div>
+                            <v-col cols="12" class="pt-2">
+                                <v-btn
+                                    type="submit"
+                                    color="primary"
+                                    size="large"
+                                    block
+                                    rounded="lg"
+                                    elevation="2"
+                                >Register</v-btn>
+                            </v-col>
+                        </v-row>
+                    </v-card>
+                </v-form>
+            </v-col>
+        </v-row>
+    </v-container>
 </template>
 
 <script setup>
-import {reactive} from "vue"
+import {reactive, ref} from "vue"
+
+const regFormRef = ref(null)
+const isValid = ref(false)
 
 const form = reactive({
     fName: "",
@@ -89,28 +117,17 @@ const form = reactive({
     pwd2: ""
 })
 
-const errors = reactive({
-    fName: "",
-    lName: "",
-    bDay: "",
-    uName: "",
-    pwd: "",
-    pwd2: ""
-})
-
-function validate() {
-    errors.fName = /^[A-Za-z]+$/.test(form.fName) ? "" : "First name must contain letters only."
-    errors.lName = /^[A-Za-z]+$/.test(form.lName) ? "" : "Last name must contain letters only."
-    errors.bDay = form.bDay ? "" : "Date of birth is required."
-    errors.uName = form.uName.length >= 3 ? "" : "Username must be at least 3 characters."
-    errors.pwd = /^(?=.*[A-Za-z0-9]).{8,}$/.test(form.pwd) ? "" : "Password must be at least 8 characters and include a special character."
-    errors.pwd2 = form.pwd === form.pwd2 ? "" : "Passwords do not match."
-
-    return !Object.values(errors).some(Boolean)
+const rules = {
+    required: v => !!v || "This field is required.",
+    lettersOnly: v => /^[A-Za-z]+$/.test(v) || "Letters only.",
+    min3: v => (v && v.length >= 3) || "Must be at least 3 characters.",
+    password: v => /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(v) || "Must be 8+ characters and include a special character.",
+    matchPassword: v => v === form.pwd || "Passwords do not match."
 }
 
 async function submitForm() {
-    if (!validate()) return
+    const {valid} = await regFormRef.value.validate()
+    if (!valid) return
     
     const payload = {
         fName: form.fName,
@@ -119,8 +136,5 @@ async function submitForm() {
         uName: form.uName,
         pwd: form.pwd
     }
-
-    const res = await fetch("")
 }
-
 </script>
