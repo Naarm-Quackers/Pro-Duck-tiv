@@ -142,7 +142,7 @@ async function submitForm() {
     }
 
     try {
-        const response = await fetch("http://localhost:5173/api_users.php", requestOptions)
+        const response = await fetch("/resources/api_users.php", requestOptions)
         const data = await response.json()
         console.log("saved:", data)
     } catch (error) {
