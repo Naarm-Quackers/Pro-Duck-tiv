@@ -17,7 +17,10 @@ const emptyTask = {
     time: '',
     location: '',
     description: '',
-    completed: false
+    priority: 'Medium',
+    status: 'Active',
+    creationDate: '',
+    completedDate: ''
 }
 
 const task = ref({
@@ -27,6 +30,8 @@ const task = ref({
 onMounted(() => {
     tasks.value = JSON.parse(localStorage.getItem('tasks')) || []
 
+
+    // If Task Editor selected from navbar then 
     if (!route.params.id) {
         showSelectTaskMessage.value = true
         return
@@ -43,7 +48,13 @@ onMounted(() => {
 function saveTask() {
     const index = tasks.value.findIndex(t => t.id == task.value.id)
     if (index !== -1) {
-        tasks.value[index] = { ...task.value }
+        const completed = task.value.status === 'Complete' || task.value.status === 'Finished'
+
+        tasks.value[index] = {
+            ...task.value,
+            completed,
+            completedDate: completed ? (task.value.completedDate || new Date().toLocaleString()) : '',
+        }
         localStorage.setItem('tasks', JSON.stringify(tasks.value))
         router.push('/task')
     } else {
@@ -76,7 +87,13 @@ function saveTask() {
 
                         <div class="mb-3">
                             <label for="type" class="form-label">Type</label>
-                            <input v-model="task.type" type="text" id="type" class="form-control" placeholder="Task type" required />
+                            <select v-model="task.type" id="type" class="form-select" required>
+                                <option value="Task">Task</option>
+                                <option value="Meeting">Meeting</option>
+                                <option value="Deadline">Deadline</option>
+                                <option value="Study">Study</option>
+                                <option value="Personal">Personal</option>
+                            </select>
                         </div>
 
                         <div class="row mb-3">
@@ -100,9 +117,22 @@ function saveTask() {
                             <textarea v-model="task.description" id="description" class="form-control" rows="4" placeholder="Task description"></textarea>
                         </div>
 
-                        <div class="mb-4 form-check">
-                            <input v-model="task.completed" type="checkbox" id="completed" class="form-check-input" />
-                            <label for="completed" class="form-check-label">Mark as Done</label>
+                        <div class="row mb-4">
+                            <div class="col">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select v-model="task.priority" id="priority" class="form-select">
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label for="status" class="form-label">Status</label>
+                                <select v-model="task.status" id="status" class="form-select">
+                                    <option value="Active">Active</option>
+                                    <option value="Complete">Complete</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="d-flex gap-2">

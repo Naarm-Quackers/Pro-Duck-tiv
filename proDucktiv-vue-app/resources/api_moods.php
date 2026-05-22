@@ -14,7 +14,7 @@ $conn = mysqli_connect('feenix-mariadb.swin.edu.au', 's105341089', '080805', 's1
 mysqli_set_charset($conn,'utf8');
 
 // &&&&& initialise the table name accordingly
-$table = "pdt_mood";
+$table = "pdt_moods";
 
 // retrieve the search key field name and value from the path
 $fld = preg_replace('/[^a-z0-9_]+/i','',array_shift($request));

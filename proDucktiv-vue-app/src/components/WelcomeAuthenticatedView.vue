@@ -33,7 +33,7 @@ const todaysTasks = computed(() => {
 
 // Task calculations
 const completedTasks = computed(() => todaysTasks.value.filter((t) => t.done).length)
-const pendingTasks = computed(() => allTasks.value.filter((t) => !t.done).length)
+const activeTasks = computed(() => allTasks.value.filter((t) => !t.done).length)
 const overdueTasks = computed(() => {
 	const today = getLocalDateString()
 	return allTasks.value.filter((t) => !t.done && t.date && t.date < today).length
@@ -184,10 +184,10 @@ const productivityScore = computed(() => {
 				<div class="card border-0 shadow-sm">
 					<div class="card-body">
 						<div class="d-flex justify-content-between">
-							<small class="text-muted">Pending Tasks</small>
+							<small class="text-muted">Active Tasks</small>
 							<i class="bi bi-clock-fill text-warning"></i>
 						</div>
-						<div class="fs-2 fw-bold mt-2">{{ pendingTasks }}</div>
+						<div class="fs-2 fw-bold mt-2">{{ activeTasks }}</div>
 						<small class="text-muted">{{ overdueTasks }} overdue {{ overdueTasks === 1 ? 'task' : 'tasks' }}</small>
 					</div>
 				</div>
@@ -230,6 +230,18 @@ const productivityScore = computed(() => {
 									:class="(task.done ?? task.completed) ? 'bg-success' : 'bg-secondary'"
 								>
 									{{ (task.done ?? task.completed) ? 'Done' : 'Active' }}
+								</span>
+								<span
+									class="badge ms-2"
+									:class="(task.priority || '').toLowerCase() === 'high'
+										? 'bg-danger'
+										: (task.priority || '').toLowerCase() === 'medium'
+											? 'bg-warning text-dark'
+											: (task.priority || '').toLowerCase() === 'low'
+												? 'bg-info text-dark'
+												: 'bg-secondary'"
+								>
+									{{ task.priority ? `${task.priority} Priority` : 'No Priority' }}
 								</span>
 							</li>
 						</ul>
