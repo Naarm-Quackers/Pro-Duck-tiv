@@ -18,7 +18,7 @@ const progressDashboard = 'https://picsum.photos/seed/progressdashboard/1200/600
 	<div class="row">
 		<div class="col-12">
 			<h1>
-                Welcome to Productiv
+                Welcome to proDucktiv
 				<span class="badge bg-success">Manage Your Tasks, Manage Your Day</span>
 			</h1>
 			<p class="lead">The all-in-one productivity app to help you stay organized and focused.</p>
