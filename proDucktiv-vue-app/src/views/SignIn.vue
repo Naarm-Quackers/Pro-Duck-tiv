@@ -2,7 +2,7 @@
     <div class='container'>
         <div class='row'>
             <div class='col-4'>
-                <h1>Sign In Page</h1>
+                <h1>Sign In</h1>
             </div>
             <div class='col-8'>
                 <button type="button" class="btn btn-success">Bootstrap Test</button>

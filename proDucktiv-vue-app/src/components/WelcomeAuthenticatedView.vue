@@ -149,13 +149,13 @@ const productivityScore = computed(() => {
 								class="btn btn-sm"
 								:class="userMood === 'up' ? 'btn-success' : 'btn-outline-success'"
 								@click="onSetMood('up')">
-								<i class="bi bi-hand-thumbs-up"></i> {{ moodUp }}
+								<i class="bi bi-hand-thumbs-up"></i> Good
 							</button>
 							<button
 								class="btn btn-sm"
 								:class="userMood === 'down' ? 'btn-danger' : 'btn-outline-danger'"
 								@click="onSetMood('down')">
-								<i class="bi bi-hand-thumbs-down"></i> {{ moodDown }}
+								<i class="bi bi-hand-thumbs-down"></i> Bad
 							</button>
 						</div>
                         <div v-if="todaysMood" class="mt-2">
