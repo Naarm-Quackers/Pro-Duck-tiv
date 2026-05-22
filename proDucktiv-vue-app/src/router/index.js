@@ -18,13 +18,13 @@ const routes = [
     { path: '/account', component: Account },
     { path: '/task', component: Task },
     { path: '/task-creator', component: TaskCreator },
-    { path: '/task-editor', component: TaskEditor },
+    { path: '/task-editor/:id?', component: TaskEditor },
     { path: '/calendar', component: Calendar },
     { path: '/journal', component: Journal }
 ]
 
 const router = createRouter({
-    history: createWebHistory(),
+        history: createWebHistory(),
     routes,
 })
 export default router

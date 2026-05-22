@@ -70,11 +70,15 @@ function editTask(id) {
     </div>
 */
 
+// IMPORTANT: Make sure the index.js file in the router folder has the following line to allow for dynamic routing to the task editor:
+// { path: '/task-editor/:id', component: TaskEditor },
+
 const route = useRoute()
 const router = useRouter()
 
 const err = ref('')
 const tasks = ref([])
+const showSelectTaskMessage = ref(false)
 
 const task = ref({
     id: '',
@@ -90,6 +94,11 @@ const task = ref({
 onMounted(() => {
     // Load tasks from src/data/tasks.json
     tasks.value = tasksData
+
+    if (!route.params.id) {
+        showSelectTaskMessage.value = true
+        return
+    }
 
     const existingTask = tasks.value.find(t => t.id == route.params.id)
     if (existingTask) {
@@ -117,7 +126,11 @@ function saveTask() {
             <div class="col-12 col-md-8 col-lg-6">
                 <h1 class="mb-4">Edit Task</h1>
 
-                <div v-if="err" class="alert alert-danger" role="alert">
+                <div v-if="showSelectTaskMessage" class="alert alert-info" role="alert">
+                    Please choose a task first from the Task page, then click Edit to open it here.
+                </div>
+
+                <div v-else-if="err" class="alert alert-danger" role="alert">
                     {{ err }}
                 </div>
 
@@ -170,6 +183,10 @@ function saveTask() {
                     </div>
 
                 </form>
+
+                <div v-if="showSelectTaskMessage" class="mt-3">
+                    <button type="button" class="btn btn-primary" @click="router.push('/task')">Go to Task List</button>
+                </div>
             </div>
         </div>
     </div>
