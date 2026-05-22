@@ -10,7 +10,7 @@ import LogoLight from "../assets/images/LightLogo.svg"
                 <p class="px-3"><img @click="toggleDarkMode" :src="isDarkMode ? LogoDark : LogoLight"
                         alt="ProDucktiv Logo" width="80px" height="80px" class="rounded-4" /></p>
                 <router-link to="/"
-                    class="navbar-brand menu-element py-3 px-1 rounded-4 fw-bold">ProDucktiv</router-link>
+                    class="navbar-brand menu-element py-3 px-1 rounded-4 fw-bold">proDucktiv</router-link>
                 <router-link to="/task"
                     class="nav-link menu-element py-3 px-1 rounded-4 fw-semibold">Tasks</router-link>
                 <router-link to="/journal"
