@@ -129,12 +129,24 @@ async function submitForm() {
     const {valid} = await regFormRef.value.validate()
     if (!valid) return
     
-    const payload = {
-        fName: form.fName,
-        lName: form.lName,
-        bDay: form.bDay,
-        uName: form.uName,
-        pwd: form.pwd
+    const requestOptions = {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_name: form.uName,
+            user_password: form.pwd,
+            user_first_name: form.fName,
+            user_last_name: form.lName,
+            user_date_of_birth: form.bDay,
+        })
+    }
+
+    try {
+        const response = await fetch("http://localhost:5173/api_users.php", requestOptions)
+        const data = await response.json()
+        console.log("saved:", data)
+    } catch (error) {
+        console.error("request failed:", error)
     }
 }
 </script>
