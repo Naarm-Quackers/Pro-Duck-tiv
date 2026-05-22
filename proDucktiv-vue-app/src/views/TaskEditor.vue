@@ -1,77 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import tasksData from '../data/tasks.json'
-
-
-// For current task editor to work make a folder called "data" in the path: C:\...\Pro-Duck-tiv\proDucktiv-vue-app\src\data
-// Within the folder put the file "tasks.json" with the following content:
-
-/*
-  {
-    "id": 1,
-    "title": "Team Meeting",
-    "type": "Meeting",
-    "date": "2026-05-10",
-    "time": "10:30",
-    "location": "Room 204",
-    "description": "Weekly project progress meeting",
-    "completed": false
-  },
-  {
-    "id": 2,
-    "title": "Submit COS30043 Lab",
-    "type": "Reminder",
-    "date": "2026-05-15",
-    "time": "23:59",
-    "location": "Online",
-    "description": "Upload lab task before deadline",
-    "completed": true
-  }
-]
-*/
-
-// Current logic for task editor is based off of Task.vue and as such, this also needs the following codes to function:
-
-/*
-// In the script section of Task.vue
-
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import tasksData from '../data/tasks.json'
-
-const router = useRouter()
-const tasks = ref([])
-
-onMounted(() => {
-  tasks.value = JSON.parse(localStorage.getItem('tasks')) || tasksData
-})
-
-function editTask(id) {
-  router.push('/task-editor/' + id)
-}
-
-// In the template section of Task.vue
-
-
-    <div class='container'>
-        <div class='row'>
-            <div class='col-12'>
-                <h1>Task Page</h1>
-                <button type="button" class="btn btn-success mb-3" @click="router.push('/task-creator')">+ New Task</button>
-                <ul class="list-group">
-                    <li v-for="task in tasks" :key="task.id" class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ task.title }} <small class="text-muted">({{ task.date }})</small></span>
-                        <button class="btn btn-primary btn-sm" @click="editTask(task.id)">Edit</button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-*/
-
-// IMPORTANT: Make sure the index.js file in the router folder has the following line to allow for dynamic routing to the task editor:
-// { path: '/task-editor/:id', component: TaskEditor },
 
 const route = useRoute()
 const router = useRouter()
@@ -80,7 +9,7 @@ const err = ref('')
 const tasks = ref([])
 const showSelectTaskMessage = ref(false)
 
-const task = ref({
+const emptyTask = ref({
     id: '',
     title: '',
     type: '',
@@ -91,9 +20,12 @@ const task = ref({
     completed: false
 })
 
+const task = ref({
+    ...emptyTask
+})
+
 onMounted(() => {
-    // Load tasks from src/data/tasks.json
-    tasks.value = tasksData
+    tasks.value = JSON.parse(localStorage.getItem('tasks')) || []
 
     if (!route.params.id) {
         showSelectTaskMessage.value = true
@@ -102,7 +34,7 @@ onMounted(() => {
 
     const existingTask = tasks.value.find(t => t.id == route.params.id)
     if (existingTask) {
-        task.value = { ...existingTask }
+        task.value = { ...emptyTask, ...existingTask }
     } else {
         err.value = 'Task not found'
     }
@@ -143,12 +75,7 @@ function saveTask() {
 
                     <div class="mb-3">
                         <label for="type" class="form-label">Type</label>
-                        <select v-model="task.type" id="type" class="form-select">
-                            <option>Meeting</option>
-                            <option>Appointment</option>
-                            <option>Reminder</option>
-                            <option>Other</option>
-                        </select>
+                        <input v-model="task.type" type="text" id="type" class="form-control" placeholder="Task type" required />
                     </div>
 
                     <div class="row mb-3">
@@ -174,18 +101,18 @@ function saveTask() {
 
                     <div class="mb-4 form-check">
                         <input v-model="task.completed" type="checkbox" id="completed" class="form-check-input" />
-                        <label for="completed" class="form-check-label">Mark as Completed</label>
+                        <label for="completed" class="form-check-label">Mark as Done</label>
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                        <button type="button" class="btn btn-outline-secondary" @click="router.push('/task')">Cancel</button>
+                        <button type="submit" class="btn btn-outline-success">Save Changes</button>
+                        <button type="button" class="btn btn-outline-warning" @click="router.push('/task')">Cancel</button>
                     </div>
 
                 </form>
 
                 <div v-if="showSelectTaskMessage" class="mt-3">
-                    <button type="button" class="btn btn-primary" @click="router.push('/task')">Go to Task List</button>
+                    <button type="button" class="btn btn-primary" @click="router.push('/task')">Go to Tasks</button>
                 </div>
             </div>
         </div>

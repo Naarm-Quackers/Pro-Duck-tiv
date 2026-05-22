@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 const search = ref('')
 const currentTab = ref('active')
+const router = useRouter()
 
 const tasks = ref([])
 
@@ -86,13 +88,27 @@ function deleteTask(id) {
           {{ task.type }}
         </p>
 
+        <p class="location">
+          Location: {{ task.location }}
+        </p>
+
+        <p class="due-date">
+          Due: {{ task.date }} at {{ task.time }}
+        </p>
+
         <p class="description">
           {{ task.description }}
         </p>
 
+        
+        
         <div class="actions">
           <button @click="toggleTask(task)">
             Toggle
+          </button>
+
+          <button @click="router.push(`/task-editor/${task.id}`)">
+            Edit
           </button>
 
           <button class="delete-btn" @click="deleteTask(task.id)">
@@ -197,7 +213,7 @@ function deleteTask(id) {
   color: #555;
 }
 
-.description {
+.description, .location, .due-date {
   margin: 20px 0;
   color: #666;
   line-height: 1.5;
@@ -217,7 +233,7 @@ function deleteTask(id) {
   cursor: pointer;
 }
 
-.delete-btn:hover {
+.actions button:hover {
   background: #f5f5f5;
 }
 </style>

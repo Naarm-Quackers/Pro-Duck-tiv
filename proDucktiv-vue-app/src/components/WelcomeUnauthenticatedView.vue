@@ -99,7 +99,7 @@ const progressDashboard = 'https://picsum.photos/seed/progressdashboard/1200/600
 			<p class="lead">Features designed to keep you productive and organized.</p>
 		</div>
 
-		<div class="row text-center g-4">
+		<div class="row text-center g-4 mb-5">
 			<div class="col-12 col-md-4">
 				<div class="d-flex justify-content-center align-items-center gap-2 mb-1">
 					<i class="bi bi-lightning-charge-fill text-success fs-3"></i>

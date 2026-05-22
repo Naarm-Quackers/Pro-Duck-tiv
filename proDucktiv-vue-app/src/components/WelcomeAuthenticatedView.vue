@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import tasksData from '../data/tasks.json'
 
 const emit = defineEmits(['toggle-auth'])
 
@@ -177,7 +176,7 @@ const productivityScore = computed(() => {
 							<i class="bi bi-check-circle-fill text-success"></i>
 						</div>
 						<div class="fs-2 fw-bold mt-2">{{ completedTasks }}</div>
-						<small class="text-muted">0 this week</small>
+						<small class="text-muted">{{ completedTasks }} this week</small>
 					</div>
 				</div>
 			</div>
@@ -213,19 +212,32 @@ const productivityScore = computed(() => {
 		<div class="row g-3">
 			<div class="col-12 col-md-7">
 				<div class="card border-0 shadow-sm h-100">
-					<div class="card-body">
+					<div class="card-body d-flex flex-column">
 						<div class="d-flex justify-content-between align-items-center mb-3">
 							<h6 class="mb-0"><i class="bi bi-calendar3 me-2 text-success"></i>Today's Tasks</h6>
 						</div>
 						<div v-if="todaysTasks.length === 0" class="text-center text-muted py-4">
 							<p>You're all clear!</p>
                             <router-link to="/task-creator">
-							<button class="btn btn-outline-success btn-sm">Add a task</button>
+								<button class="btn btn-outline-success btn-sm">Add a task</button>
                             </router-link>
 						</div>
 						<ul v-else class="list-group list-group-flush">
-							<li v-for="task in todaysTasks" :key="task.id" class="list-group-item">{{ task.title }}</li>
+							<li v-for="task in todaysTasks" :key="task.id" class="list-group-item">
+								{{ task.title }}
+								<span
+									class="badge ms-2"
+									:class="(task.done ?? task.completed) ? 'bg-success' : 'bg-secondary'"
+								>
+									{{ (task.done ?? task.completed) ? 'Done' : 'Active' }}
+								</span>
+							</li>
 						</ul>
+						<div v-if="todaysTasks.length > 0" class="mt-auto pt-3">
+							<router-link to="/task">
+								<button class="btn btn-outline-success btn-sm">View Tasks</button>
+							</router-link>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -236,7 +248,7 @@ const productivityScore = computed(() => {
 						<h6><i class="bi bi-alarm text-success me-2"></i>Upcoming Deadlines</h6>
 						<p v-if="upcomingDeadlines.length === 0" class="text-muted mb-0" style="font-size:0.85rem;">No upcoming deadlines</p>
 						<ul v-else class="list-group list-group-flush">
-							<li v-for="d in upcomingDeadlines" :key="d.id" class="list-group-item px-0">{{ d.title }} {{ d.date }}</li>
+							<li v-for="d in upcomingDeadlines" :key="d.id" class="list-group-item px-0">{{ d.title }} {{ d.date }} at {{ d.time }}</li>
 						</ul>
 					</div>
 				</div>
