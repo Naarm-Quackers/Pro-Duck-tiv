@@ -243,30 +243,30 @@ function deleteTask(id) {
     <!-- sidebar navigation -->
     <aside class="sidebar">
       <h2>proDucktiv</h2>
-      <p>task manager</p>
+      <p>Task Manager</p>
 
       <button :class="{ active: selectedView === 'active' }" @click="selectedView = 'active'">
-        active tasks
+        Active Tasks
         <span>{{ activeTasks.length }}</span>
       </button>
 
       <button :class="{ active: selectedView === 'reminders' }" @click="selectedView = 'reminders'">
-        due reminders
+        Due Reminders
         <span>{{ reminderTasks.length }}</span>
       </button>
 
       <button :class="{ active: selectedView === 'completed' }" @click="selectedView = 'completed'">
-        completed history
+        Completed History
         <span>{{ completedTasks.length }}</span>
       </button>
 
       <button :class="{ active: selectedView === 'high' }" @click="selectedView = 'high'">
-        high priority
+        High Priority
         <span>{{ highPriorityTasks.length }}</span>
       </button>
 
       <button :class="{ active: selectedView === 'all' }" @click="selectedView = 'all'">
-        all tasks
+        All Tasks
         <span>{{ totalTasks }}</span>
       </button>
     </aside>
@@ -302,22 +302,22 @@ function deleteTask(id) {
       <section class="summary-grid">
         <div class="summary-card">
           <h3>{{ totalTasks }}</h3>
-          <p>total tasks</p>
+          <p>Total Tasks</p>
         </div>
 
         <div class="summary-card">
           <h3>{{ activeTasks.length }}</h3>
-          <p>active</p>
+          <p>Active</p>
         </div>
 
         <div class="summary-card warning-card">
           <h3>{{ reminderTasks.length }}</h3>
-          <p>due soon</p>
+          <p>Due Soon</p>
         </div>
 
         <div class="summary-card warning-card">
           <h3>{{ highPriorityTasks.length }}</h3>
-          <p>high priority</p>
+          <p>High Priority</p>
         </div>
       </section>
 
