@@ -3,14 +3,18 @@
   Required table — run once in your database:
 
  CREATE TABLE pdt_journals (
-    journal_id   INT          NOT NULL AUTO_INCREMENT,
-    user_id      INT          NOT NULL,
-    journal_name VARCHAR(255) NOT NULL DEFAULT 'Untitled',
-    journal_body LONGTEXT,
-    journal_date DATE         NOT NULL,
-    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    journal_id     INT          NOT NULL AUTO_INCREMENT,
+    user_id        INT          NOT NULL,
+    journal_name   VARCHAR(255) NOT NULL DEFAULT 'Untitled',
+    journal_body   LONGTEXT,
+    journal_date   DATE         NOT NULL,
+    journal_status VARCHAR(10)  DEFAULT NULL,
+    created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (journal_id)
 )
+
+ -- To add the column to an existing table:
+ -- ALTER TABLE pdt_journals ADD COLUMN journal_status VARCHAR(10) DEFAULT NULL;
 */
 
 ob_start();
