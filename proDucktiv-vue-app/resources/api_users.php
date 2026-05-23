@@ -1,9 +1,18 @@
 <?php
+ob_start();
+ini_set('display_errors', 0);
+error_reporting(0);
+
+$conn = mysqli_connect('feenix-mariadb.swin.edu.au', 's105341089', '080805', 's105341089_db');
+
+ob_end_clean();
 header('Content-Type: application/json');
 
-// connect to the mysql database, provide the appropriate credentials
-//$conn = mysqli_connect('localhost', 'root', '', 'your-database');
-$conn = mysqli_connect('feenix-mariadb.swin.edu.au', 's105341089', '080805', 's105341089_db');
+if (!$conn) {
+    http_response_code(500);
+    echo json_encode(array('error' => 'DB connection failed: ' . mysqli_connect_error()));
+    exit;
+}
 
 // initialise the table name accordingly
 $table = "pdt_users";
@@ -16,7 +25,11 @@ $input = json_decode(file_get_contents('php://input'),true);  // json string to 
 mysqli_set_charset($conn,'utf8');
 
 if ($method === 'GET') {
-	$sql = "SELECT * FROM `$table`";
+	$fld = preg_replace('/[^a-z0-9_]+/i', '', isset($_GET['fld']) ? $_GET['fld'] : '');
+	$key = isset($_GET['key']) ? $_GET['key'] : '';
+
+	$where = ($fld && $key) ? " WHERE `$fld`='" . mysqli_real_escape_string($conn, $key) . "'" : '';
+	$sql = "SELECT user_id, user_name, user_first_name, user_last_name, user_date_of_birth FROM `$table`$where";
 	$result = mysqli_query($conn, $sql);
 
 	$rows = [];
@@ -29,11 +42,11 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-	$user_name = mysqli_real_escape_string($conn, $input['user_name'] ?? '');
-	$user_password = mysqli_real_escape_string($conn, $input['user_password'] ?? '');
-	$user_first_name = mysqli_real_escape_string($conn, $input['user_first_name'] ?? '');
-	$user_last_name = mysqli_real_escape_string($conn, $input['user_last_name'] ?? '');
-	$user_date_of_birth = mysqli_real_escape_string($conn, $input['user_date_of_birth'] ?? '');
+	$user_name          = mysqli_real_escape_string($conn, isset($input['user_name'])          ? $input['user_name']          : '');
+	$user_password      = mysqli_real_escape_string($conn, isset($input['user_password'])      ? $input['user_password']      : '');
+	$user_first_name    = mysqli_real_escape_string($conn, isset($input['user_first_name'])    ? $input['user_first_name']    : '');
+	$user_last_name     = mysqli_real_escape_string($conn, isset($input['user_last_name'])     ? $input['user_last_name']     : '');
+	$user_date_of_birth = mysqli_real_escape_string($conn, isset($input['user_date_of_birth']) ? $input['user_date_of_birth'] : '');
 
 	$sql = "INSERT INTO `$table` (user_name, user_password, user_first_name, user_last_name, user_date_of_birth) VALUES ('$user_name', '$user_password', '$user_first_name', '$user_last_name', '$user_date_of_birth')";
 

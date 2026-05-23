@@ -1,7 +1,7 @@
 <?php
 /*
-  Required table — run once in your database:
-
+ Table creation SQL for reference:
+    
  CREATE TABLE pdt_journals (
     journal_id     INT          NOT NULL AUTO_INCREMENT,
     user_id        INT          NOT NULL,
@@ -12,9 +12,6 @@
     created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (journal_id)
 )
-
- -- To add the column to an existing table:
- -- ALTER TABLE pdt_journals ADD COLUMN journal_status VARCHAR(10) DEFAULT NULL;
 */
 
 ob_start();
