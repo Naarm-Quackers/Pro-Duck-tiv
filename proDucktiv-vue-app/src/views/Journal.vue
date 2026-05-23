@@ -57,9 +57,9 @@
                             {{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }}
                         </span>
                         <button class="btn btn-sm text-nowrap"
-                            :class="isDirty ? 'btn-primary' : 'btn-outline-secondary'" :disabled="saving"
+                            :class="isDirty || creatingNew ? 'btn-primary' : 'btn-outline-secondary'" :disabled="saving"
                             @click="saveJournal">
-                            {{ saving ? 'Saving…' : isDirty ? 'Save' : 'Saved ✓' }}
+                            {{ saving ? 'Saving…' : isDirty || creatingNew ? 'Save' : 'Saved ✓' }}
                         </button>
                         <button v-if="activeJournal && !creatingNew" class="btn btn-sm btn-outline-danger"
                             @click="showDeleteModal = true">
