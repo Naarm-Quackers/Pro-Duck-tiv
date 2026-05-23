@@ -5,6 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json');
+
 // api_tasks.php
 // purpose:
 // - provide CRUD operations for the pdt_tasks mysql table.
