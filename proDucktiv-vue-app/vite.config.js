@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  base: '/cos30043/s105337347/proDucktiv/',
    server: {
     proxy: {
       '/resources': {

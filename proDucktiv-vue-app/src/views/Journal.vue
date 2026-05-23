@@ -163,7 +163,7 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 
-const JOURNALS_API = '/resources/api_journals.php'
+const JOURNALS_API = '/cos30043/s105337347/proDucktiv/resources/api_journals.php'
 const USER_ID = 2  // temporary — replace with the logged-in user's real ID
 
 const PAGE_CHAR_LIMIT = 1800
@@ -195,11 +195,11 @@ onMounted(fetchJournals)
 async function fetchJournals() {
   loadingJournals.value = true
   try {
-    const res = await fetch(`${JOURNALS_API}/user_id/${USER_ID}`)
-    if (!res.ok) throw new Error()
+    const res = await fetch(`${JOURNALS_API}?fld=user_id&key=${USER_ID}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     journals.value = await res.json()
-  } catch {
-    journals.value = sampleJournals()
+  } catch (err) {
+    showToast(`Failed to load journals: ${err.message}`, 'danger')
   } finally {
     loadingJournals.value = false
   }
@@ -231,7 +231,7 @@ async function saveJournal() {
       activeJournal.value = saved
       creatingNew.value   = false
     } else {
-      const res = await fetch(`${JOURNALS_API}/journal_id/${activeJournal.value.journal_id}`, {
+      const res = await fetch(`${JOURNALS_API}?fld=journal_id&key=${activeJournal.value.journal_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -244,9 +244,8 @@ async function saveJournal() {
     }
     isDirty.value = false
     showToast('Journal saved', 'success')
-  } catch {
-    isDirty.value = false
-    showToast('Saved (demo mode)', 'success')
+  } catch (err) {
+    showToast(`Save failed: ${err.message}`, 'danger')
   } finally {
     saving.value = false
   }
@@ -255,14 +254,17 @@ async function saveJournal() {
 async function deleteJournal() {
   showDeleteModal.value = false
   try {
-    await fetch(`${JOURNALS_API}/journal_id/${activeJournal.value.journal_id}`, { method: 'DELETE' })
-  } catch { /* demo */ }
-  journals.value      = journals.value.filter(j => j.journal_id !== activeJournal.value.journal_id)
-  activeJournal.value = null
-  creatingNew.value   = false
-  pages.value         = ['']
-  currentPage.value   = 0
-  showToast('Journal deleted', 'danger')
+    const res = await fetch(`${JOURNALS_API}?fld=journal_id&key=${activeJournal.value.journal_id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    journals.value      = journals.value.filter(j => j.journal_id !== activeJournal.value.journal_id)
+    activeJournal.value = null
+    creatingNew.value   = false
+    pages.value         = ['']
+    currentPage.value   = 0
+    showToast('Journal deleted', 'danger')
+  } catch (err) {
+    showToast(`Delete failed: ${err.message}`, 'danger')
+  }
 }
 
 function openNewJournal() {
@@ -381,24 +383,6 @@ function showToast(message, type = 'success') {
   toastTimer    = setTimeout(() => { toast.show = false }, 2800)
 }
 
-function sampleJournals() {
-  return [
-    {
-      journal_id: 'demo-1',
-      user_id: USER_ID,
-      journal_name: 'First day of spring',
-      journal_date: '2025-09-01',
-      journal_body: 'Today was beautiful. The light came through the window differently.',
-    },
-    {
-      journal_id: 'demo-2',
-      user_id: USER_ID,
-      journal_name: 'Late night thoughts',
-      journal_date: '2025-09-12',
-      journal_body: 'It is 1am and I cannot sleep.',
-    },
-  ]
-}
 </script>
 
 <style scoped>

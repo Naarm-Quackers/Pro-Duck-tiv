@@ -3,7 +3,7 @@
   Required table — run once in your database:
 
  CREATE TABLE pdt_journals (
-    journal_id   CHAR(36)     NOT NULL,
+    journal_id   INT          NOT NULL AUTO_INCREMENT,
     user_id      INT          NOT NULL,
     journal_name VARCHAR(255) NOT NULL DEFAULT 'Untitled',
     journal_body LONGTEXT,
@@ -13,22 +13,33 @@
 )
 */
 
-$method  = $_SERVER['REQUEST_METHOD'];
-$request = explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'));
-$input   = json_decode(file_get_contents('php://input'), true);
+ob_start();
+ini_set('display_errors', 0);
+error_reporting(0);
+
+$method = $_SERVER['REQUEST_METHOD'];
+$input  = json_decode(file_get_contents('php://input'), true);
 
 // *** Change to your credentials ***
 $conn = mysqli_connect('feenix-mariadb.swin.edu.au', 's105341089', '080805', 's105341089_db');
 // $conn = mysqli_connect('localhost', 'root', '', 'test');
 
+// Discard any PHP HTML errors captured in the buffer before sending any output
+ob_end_clean();
+header('Content-Type: application/json');
+
+if (!$conn) {
+    http_response_code(500);
+    echo json_encode(array('error' => 'DB connection failed: ' . mysqli_connect_error()));
+    exit;
+}
+
 mysqli_set_charset($conn, 'utf8');
 
 $table = 'pdt_journals';
 
-$fld = preg_replace('/[^a-z0-9_]+/i', '', array_shift($request));
-$key = array_shift($request);
-
-header('Content-Type: application/json');
+$fld = preg_replace('/[^a-z0-9_]+/i', '', isset($_GET['fld']) ? $_GET['fld'] : '');
+$key = isset($_GET['key']) ? $_GET['key'] : '';
 
 switch ($method) {
 
@@ -49,9 +60,6 @@ switch ($method) {
         break;
 
     case 'POST':
-        $uuid = generateUUID();
-        $input['journal_id'] = $uuid;
-
         $columns = array_map(function ($c) {
             return preg_replace('/[^a-z0-9_]+/i', '', $c);
         }, array_keys($input));
@@ -68,7 +76,8 @@ switch ($method) {
 
         $result = mysqli_query($conn, "INSERT INTO `$table` SET $set");
         if ($result) {
-            $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM `$table` WHERE journal_id='" . mysqli_real_escape_string($conn, $uuid) . "'"));
+            $newId = mysqli_insert_id($conn);
+            $row   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM `$table` WHERE journal_id=" . intval($newId)));
             echo json_encode($row);
         } else {
             http_response_code(500);
@@ -114,12 +123,5 @@ switch ($method) {
         break;
 }
 
-function generateUUID()
-{
-    $data    = random_bytes(16);
-    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-}
 
 mysqli_close($conn);
