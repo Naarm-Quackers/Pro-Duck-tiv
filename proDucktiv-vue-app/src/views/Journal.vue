@@ -78,29 +78,40 @@
           </button>
         </div>
 
-        <!-- Pages -->
-        <div class="overflow-y-auto flex-grow-1 p-4 bg-secondary bg-opacity-10" ref="pagesContainer">
-          <div
-            v-for="(page, index) in pages"
-            :key="index"
-            class="bg-white border mx-auto mb-4 p-5"
-            style="width:794px;min-height:1040px;"
-          >
-            <div class="text-end text-muted border-top pt-1 mb-4" style="font-size:11px;">
-              Page {{ index + 1 }}
-            </div>
+        <!-- Page + pagination -->
+        <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-start p-4 bg-secondary bg-opacity-10 overflow-y-auto">
 
-            <div
-              class="w-100 h-100"
-              style="outline:none;font-size:15px;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;"
-              contenteditable="true"
-              :data-page="index"
-              :ref="el => setPageRef(el, index)"
-              @input="onPageInput(index)"
-              @keydown="onPageKeydown($event, index)"
-              @paste="onPaste($event, index)"
-            ></div>
+          <!-- A4 paper -->
+          <div class="bg-white border p-5 d-flex flex-column" style="width:794px;height:1040px;">
+            <textarea
+              ref="textareaRef"
+              v-model="pages[currentPage]"
+              class="flex-grow-1 w-100 border-0"
+              style="resize:none;outline:none;font-size:15px;line-height:1.8;overflow:hidden;"
+              placeholder="Begin writing…"
+              @keydown="onKeydown"
+              @input="onInput"
+            ></textarea>
+            <div class="text-end text-muted border-top pt-1" style="font-size:11px;">
+              Page {{ currentPage + 1 }}
+            </div>
           </div>
+
+          <!-- Pagination -->
+          <nav class="mt-3">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+              <li class="page-item" :class="{ disabled: currentPage === 0 }">
+                <button class="page-link" @click="prevPage">← Prev</button>
+              </li>
+              <li class="page-item disabled">
+                <span class="page-link">{{ currentPage + 1 }} / {{ pages.length }}</span>
+              </li>
+              <li class="page-item">
+                <button class="page-link" @click="nextPage">Next →</button>
+              </li>
+            </ul>
+          </nav>
+
         </div>
 
       </div>
@@ -164,7 +175,6 @@ const loadingJournals = ref(false)
 const saving          = ref(false)
 const isDirty         = ref(false)
 const showDeleteModal = ref(false)
-const pagesContainer  = ref(null)
 
 const form = reactive({
   journal_name: '',
@@ -172,18 +182,15 @@ const form = reactive({
   journal_body: '',
 })
 
-const pages    = ref([''])
-const pageRefs = ref([])
+const pages       = ref([''])
+const currentPage = ref(0)
+const textareaRef = ref(null)
 
 const toast = reactive({ show: false, message: '', type: 'success' })
 let toastTimer    = null
 let autoSaveTimer = null
 
 onMounted(fetchJournals)
-
-function setPageRef(el, index) {
-  pageRefs.value[index] = el
-}
 
 async function fetchJournals() {
   loadingJournals.value = true
@@ -201,7 +208,7 @@ async function fetchJournals() {
 async function saveJournal() {
   if (!isDirty.value && activeJournal.value) return
   saving.value = true
-  syncBodyFromPages()
+  form.journal_body = pages.value.join('')
 
   const payload = {
     user_id:      USER_ID,
@@ -254,6 +261,7 @@ async function deleteJournal() {
   activeJournal.value = null
   creatingNew.value   = false
   pages.value         = ['']
+  currentPage.value   = 0
   showToast('Journal deleted', 'danger')
 }
 
@@ -265,7 +273,7 @@ function openNewJournal() {
   form.journal_date   = todayISO()
   form.journal_body   = ''
   pages.value         = ['']
-  nextTick(renderPages)
+  currentPage.value   = 0
 }
 
 function loadJournal(j) {
@@ -274,153 +282,78 @@ function loadJournal(j) {
   isDirty.value       = false
   form.journal_name   = j.journal_name
   form.journal_date   = j.journal_date
-  form.journal_body   = j.journal_body || ''
   splitBodyIntoPages(j.journal_body || '')
-  nextTick(renderPages)
 }
 
 function splitBodyIntoPages(body) {
-  if (!body) { pages.value = ['']; return }
+  if (!body) { pages.value = ['']; currentPage.value = 0; return }
   const chunks = []
   let remaining = body
   while (remaining.length > 0) {
     chunks.push(remaining.slice(0, PAGE_CHAR_LIMIT))
     remaining = remaining.slice(PAGE_CHAR_LIMIT)
   }
-  pages.value = chunks.length ? chunks : ['']
+  pages.value   = chunks.length ? chunks : ['']
+  currentPage.value = 0
 }
 
-function syncBodyFromPages() {
-  pageRefs.value.forEach((el, i) => {
-    if (el) pages.value[i] = el.innerText || ''
-  })
-  form.journal_body = pages.value.join('')
+function onKeydown(e) {
+  // Backspace at the very start of a page merges it back into the previous page
+  if (e.key === 'Backspace') {
+    const ta = textareaRef.value
+    if (ta && ta.selectionStart === 0 && ta.selectionEnd === 0 && currentPage.value > 0) {
+      e.preventDefault()
+      const prev = pages.value[currentPage.value - 1]
+      const cur  = pages.value[currentPage.value]
+      if ((prev + cur).length <= PAGE_CHAR_LIMIT) {
+        pages.value[currentPage.value - 1] = prev + cur
+        pages.value.splice(currentPage.value, 1)
+      }
+      currentPage.value--
+      nextTick(() => {
+        if (textareaRef.value) textareaRef.value.setSelectionRange(prev.length, prev.length)
+      })
+      markDirty()
+    }
+    return
+  }
+
+  // Let all other navigation / modifier keys through untouched
+  const nav = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Tab', 'Delete', 'Escape', 'Enter']
+  if (nav.includes(e.key) || e.ctrlKey || e.metaKey) return
+
+  // Block printable chars when the page is full — auto-advance instead
+  if (pages.value[currentPage.value].length >= PAGE_CHAR_LIMIT) {
+    e.preventDefault()
+    nextPage()
+  }
 }
 
-async function renderPages() {
-  await nextTick()
-  pageRefs.value.forEach((el, i) => {
-    if (el && pages.value[i] !== undefined) el.innerText = pages.value[i]
-  })
-}
-
-function onPageInput(index) {
-  const el = pageRefs.value[index]
-  if (!el) return
-  const text = el.innerText || ''
-
+function onInput() {
+  // Safety net: if v-model somehow lets content exceed the limit, split the overflow off
+  const text = pages.value[currentPage.value]
   if (text.length > PAGE_CHAR_LIMIT) {
     const kept     = text.slice(0, PAGE_CHAR_LIMIT)
     const overflow = text.slice(PAGE_CHAR_LIMIT)
-
-    pages.value[index] = kept
-    el.innerText = kept
-    moveCaret(el, kept.length)
-
-    if (pages.value[index + 1] !== undefined) {
-      pages.value[index + 1] = overflow + pages.value[index + 1]
+    pages.value[currentPage.value] = kept
+    const next = currentPage.value + 1
+    if (pages.value[next] !== undefined) {
+      pages.value[next] = overflow + pages.value[next]
     } else {
       pages.value.push(overflow)
     }
-
-    nextTick(() => renderPages().then(() => focusPage(index + 1, 0)))
-  } else {
-    pages.value[index] = text
+    currentPage.value = next
   }
-
   markDirty()
 }
 
-function onPageKeydown(event, index) {
-  const el = pageRefs.value[index]
-  if (!el) return
-
-  if (event.key === 'Backspace') {
-    const sel = window.getSelection()
-    if (sel && sel.anchorOffset === 0 && index > 0) {
-      event.preventDefault()
-      const prevText = pages.value[index - 1] || ''
-      const curText  = pages.value[index]     || ''
-      const merged   = prevText + curText
-
-      if (merged.length <= PAGE_CHAR_LIMIT) {
-        pages.value[index - 1] = merged
-        pages.value.splice(index, 1)
-        nextTick(() => renderPages().then(() => focusPage(index - 1, prevText.length)))
-      } else {
-        focusPage(index - 1, prevText.length)
-      }
-      markDirty()
-    }
-  }
-
-  if (event.key === 'Enter' && (el.innerText || '').length >= PAGE_CHAR_LIMIT - 1) {
-    event.preventDefault()
-    if (!pages.value[index + 1]) pages.value.push('')
-    nextTick(() => renderPages().then(() => focusPage(index + 1, 0)))
-  }
-
-  if (event.key === 'ArrowDown' && index < pages.value.length - 1) {
-    const sel = window.getSelection()
-    if (sel?.getRangeAt(0).endOffset >= (el.innerText || '').length - 1) {
-      event.preventDefault()
-      focusPage(index + 1, 0)
-    }
-  }
-
-  if (event.key === 'ArrowUp' && index > 0) {
-    const sel = window.getSelection()
-    if (sel?.getRangeAt(0).startOffset === 0) {
-      event.preventDefault()
-      focusPage(index - 1, (pages.value[index - 1] || '').length)
-    }
-  }
+function prevPage() {
+  if (currentPage.value > 0) currentPage.value--
 }
 
-function onPaste(event, index) {
-  event.preventDefault()
-  const text = (event.clipboardData || window.clipboardData).getData('text/plain')
-  if (!text) return
-
-  let remaining = (pageRefs.value[index]?.innerText || '') + text
-  let pos = index
-
-  while (remaining.length > 0) {
-    pages.value[pos] = remaining.slice(0, PAGE_CHAR_LIMIT)
-    remaining        = remaining.slice(PAGE_CHAR_LIMIT)
-    if (remaining.length > 0) {
-      pos++
-      if (!pages.value[pos]) pages.value.push('')
-    }
-  }
-
-  nextTick(() => { renderPages(); markDirty() })
-}
-
-function focusPage(index, offset) {
-  const el = pageRefs.value[index]
-  if (!el) return
-  el.focus()
-  const node = el.childNodes[0]
-  if (node) {
-    const range = document.createRange()
-    range.setStart(node, Math.min(offset, node.length || 0))
-    range.collapse(true)
-    const sel = window.getSelection()
-    sel.removeAllRanges()
-    sel.addRange(range)
-  }
-}
-
-function moveCaret(el, offset) {
-  const node = el.childNodes[0]
-  if (!node) return
-  const range = document.createRange()
-  range.setStart(node, Math.min(offset, node.length || 0))
-  range.collapse(true)
-  const sel = window.getSelection()
-  sel.removeAllRanges()
-  sel.addRange(range)
+function nextPage() {
+  if (currentPage.value >= pages.value.length - 1) pages.value.push('')
+  currentPage.value++
 }
 
 function markDirty() {
@@ -469,12 +402,6 @@ function sampleJournals() {
 </script>
 
 <style scoped>
-[contenteditable]:empty::before {
-  content: 'Begin writing…';
-  color: #adb5bd;
-  pointer-events: none;
-}
-
 .fade-enter-active, .fade-leave-active { transition: opacity 0.25s; }
 .fade-enter-from,  .fade-leave-to      { opacity: 0; }
 </style>

@@ -2,18 +2,15 @@
 /*
   Required table — run once in your database:
 
-  CREATE TABLE pdt_journals (
+ CREATE TABLE pdt_journals (
     journal_id   CHAR(36)     NOT NULL,
     user_id      INT          NOT NULL,
     journal_name VARCHAR(255) NOT NULL DEFAULT 'Untitled',
     journal_body LONGTEXT,
     journal_date DATE         NOT NULL,
-    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
-                              ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (journal_id),
-    KEY idx_user_id (user_id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (journal_id)
+)
 */
 
 $method  = $_SERVER['REQUEST_METHOD'];
@@ -55,8 +52,10 @@ switch ($method) {
         $uuid = generateUUID();
         $input['journal_id'] = $uuid;
 
-        $columns = array_map(function($c) { return preg_replace('/[^a-z0-9_]+/i', '', $c); }, array_keys($input));
-        $values  = array_map(function($v) use ($conn) {
+        $columns = array_map(function ($c) {
+            return preg_replace('/[^a-z0-9_]+/i', '', $c);
+        }, array_keys($input));
+        $values  = array_map(function ($v) use ($conn) {
             if ($v === null) return null;
             return mysqli_real_escape_string($conn, (string)$v);
         }, array_values($input));
@@ -78,8 +77,10 @@ switch ($method) {
         break;
 
     case 'PUT':
-        $columns = array_map(function($c) { return preg_replace('/[^a-z0-9_]+/i', '', $c); }, array_keys($input));
-        $values  = array_map(function($v) use ($conn) {
+        $columns = array_map(function ($c) {
+            return preg_replace('/[^a-z0-9_]+/i', '', $c);
+        }, array_keys($input));
+        $values  = array_map(function ($v) use ($conn) {
             if ($v === null) return null;
             return mysqli_real_escape_string($conn, (string)$v);
         }, array_values($input));
@@ -113,7 +114,8 @@ switch ($method) {
         break;
 }
 
-function generateUUID() {
+function generateUUID()
+{
     $data    = random_bytes(16);
     $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
     $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
@@ -121,4 +123,3 @@ function generateUUID() {
 }
 
 mysqli_close($conn);
-?>
