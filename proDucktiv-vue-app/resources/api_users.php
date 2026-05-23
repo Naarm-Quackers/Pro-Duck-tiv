@@ -51,51 +51,39 @@ if ($method === 'POST') {
 	$sql = "INSERT INTO `$table` (user_name, user_password, user_first_name, user_last_name, user_date_of_birth) VALUES ('$user_name', '$user_password', '$user_first_name', '$user_last_name', '$user_date_of_birth')";
 
 	if (mysqli_query($conn, $sql)) {
-		echo json_encode([
-			'success' => true,
-			'id' => mysqli_insert_id($conn)
-		]);
+		echo json_encode(array('success' => true, 'id' => mysqli_insert_id($conn)));
 	} else {
-		echo json_encode([
-			'success' => false,
-			'error' => mysqli_insert_id($conn)
-		]);
+		http_response_code(500);
+		echo json_encode(array('error' => mysqli_error($conn)));
 	}
 	exit;
 }
 
+if ($method === 'PUT') {
+	$fld = preg_replace('/[^a-z0-9_]+/i', '', isset($_GET['fld']) ? $_GET['fld'] : '');
+	$key = isset($_GET['key']) ? $_GET['key'] : '';
 
-// // retrieve the search key field name and value from the path
-// $fld = preg_replace('/[^a-z0-9_]+/i','',array_shift($request));
-// $key = array_shift($request);
-// // retrieve the data to prepare set values
-// if (isset ($input))  {
-// 	$columns = preg_replace('/[^a-z0-9_]+/i','',array_keys($input));
-// 	$values = array_map(function ($value) use ($conn) {
-// 		if ($value===null) return null;
-// 		return mysqli_real_escape_string($conn,(string)$value);
-// 	},array_values($input));
+	$user_first_name    = mysqli_real_escape_string($conn, isset($input['user_first_name'])    ? $input['user_first_name']    : '');
+	$user_last_name     = mysqli_real_escape_string($conn, isset($input['user_last_name'])     ? $input['user_last_name']     : '');
+	$user_date_of_birth = mysqli_real_escape_string($conn, isset($input['user_date_of_birth']) ? $input['user_date_of_birth'] : '');
 
-// }
+	$dob = $user_date_of_birth ? "'$user_date_of_birth'" : 'NULL';
 
-// // create SQL
-// switch ($method) {
-//   case 'POST':
-//   	$sql = "select * from `$table` WHERE username='".$input['username']."' and password ='".$input['password']."'"; break;
-// }
+	$safeKey = mysqli_real_escape_string($conn, $key);
+	$sql = "UPDATE `$table` SET user_first_name='$user_first_name', user_last_name='$user_last_name', user_date_of_birth=$dob WHERE `$fld`='$safeKey'";
+	$result = mysqli_query($conn, $sql);
 
-// // execute SQL statement
-// $result = mysqli_query($conn,$sql);
-// if ($result) {
-// 	if ($method == 'POST') {
-// 			echo json_encode(mysqli_fetch_object($result));
+	if ($result) {
+		$row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user_id, user_name, user_first_name, user_last_name, user_date_of_birth FROM `$table` WHERE `$fld`='$safeKey'"));
+		echo json_encode($row);
+	} else {
+		http_response_code(500);
+		echo json_encode(array('error' => mysqli_error($conn)));
+	}
+	exit;
+}
 
-// 	} else {
-// 		echo mysqli_affected_rows($conn);
-// 	}
-// }
-
-echo json_encode(['error' => 'Unsupported method']);
+echo json_encode(array('error' => 'Unsupported method'));
 
 // close mysql connection
 mysqli_close($conn);
