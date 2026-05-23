@@ -94,7 +94,42 @@
                 <tbody>
                     <tr>
                         <td class="col text-center bg-warning bg-opacity-25">
-                            <p>Content goes here</p>
+                            <div
+                                class="card bday-hover"
+                                style="width: 100%"
+                                v-if="true"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title fw-bold">
+                                        Brithday message
+                                    </h5>
+                                    <p class="card-text">Happy Brithday &#x1F381 &#x1F382 &#x1F389</p>
+                                </div>
+                            </div>
+                            <div
+                                class="card task-hover"
+                                style="width: 100%"
+                                v-if="true"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title fw-bold">
+                                        Tasks for Today
+                                    </h5>
+                                    <p class="card-text">task description</p>
+                                </div>
+                            </div>
+                            <div
+                                class="card task-hover"
+                                style="width: 100%"
+                                v-if="true"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title fw-bold">
+                                        Todays Journal
+                                    </h5>
+                                    <p class="card-text">Journal entry</p>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -176,7 +211,42 @@
                                 day.isSelected ? 'bg-warning bg-opacity-25' : ''
                             "
                         >
-                            <p>Content goes here</p>
+                            <div
+                                class="card bday-hover"
+                                style="width: 100%"
+                                v-if="true"
+                            >
+                                <div class="card-body p-1">
+                                    <h6 class="card-title fw-bold">
+                                        Brithday message
+                                    </h6>
+                                    <p class="card-text">Happy Brithday &#x1F381 &#x1F382 &#x1F389</p>
+                                </div>
+                            </div>
+                            <div
+                                class="card task-hover"
+                                style="width: 100%"
+                                v-if="true"
+                            >
+                                <div class="card-body p-1">
+                                    <h6 class="card-title fw-bold">
+                                        Tasks for Today
+                                    </h6>
+                                    <p class="card-text">task description</p>
+                                </div>
+                            </div>
+                            <div
+                                class="card task-hover"
+                                style="width: 100%"
+                                v-if="true"
+                            >
+                                <div class="card-body p-1">
+                                    <h6 class="card-title fw-bold">
+                                        Todays Journal
+                                    </h6>
+                                    <p class="card-text">Journal Entry</p>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -267,13 +337,49 @@
                             v-for="(day, di) in week"
                             :class="
                                 day?.isSelected
-                                    ? 'bg-success bg-opacity-50 month-calendar-body'
-                                    : 'day-cell green-hover '
+                                    ? 'bg-warning bg-opacity-25 month-calendar-body'
+                                    : 'day-cell green-hover'
                             "
                             @click="selectDateMonth(day)"
                         >
-                            <h5>{{ day?.date.getDate() }}</h5>
-                            <p v-if="day != null">Content goes here</p>
+                            <h5 v-if="day != null" class="text-center">
+                                {{ day?.date.getDate() }}
+                            </h5>
+                            <div v-if="day != null">
+                                <div
+                                    class="card bday-hover"
+                                    style="width: 100%"
+                                    v-if="true"
+                                >
+                                    <div class="card-body p-1">
+                                        <h6 class="card-title fw-bold">
+                                            Happy Birthday &#x1F381
+                                        </h6>
+                                    </div>
+                                </div>
+                                <div
+                                    class="card task-hover"
+                                    style="width: 100%"
+                                    v-if="true"
+                                >
+                                    <div class="card-body p-1">
+                                        <h6 class="card-title fw-bold">
+                                            Tasks for Today
+                                        </h6>
+                                    </div>
+                                </div>
+                                <div
+                                    class="card task-hover"
+                                    style="width: 100%"
+                                    v-if="true"
+                                >
+                                    <div class="card-body p-1">
+                                        <h6 class="card-title fw-bold">
+                                            Todays Journal
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -301,9 +407,9 @@ export default {
             isBirthday: false,
             dayTimeData: dayTimeData,
             monthData: monthData,
-            USER_API: "",
-            TASK_API: "",
-            JOURNAL_API: "",
+            USER_API: "/resources/api_users.php",
+            TASK_API: "/resources/",
+            JOURNAL_API: "/resources/",
             users: [],
             tasks: [],
             journals: [],
@@ -552,7 +658,7 @@ export default {
                     this.journalDbError = error.message;
                 });
         },
-        // check for birthday
+        // check for birthday ---> needs to be reformated to match user database
         bDayCheck(day) {
             const formattedDate = [day]
                 .toLocaleDateString("en-au")
@@ -576,11 +682,22 @@ export default {
 .green-hover:hover {
     background-color: var(--bs-success);
     border-color: var(--bs-success);
-    opacity: 40%;
+    opacity: 50%;
     transition: ease 0.5s;
 }
-.green-td:hover {
-    background-color: var(--bs-success);
+.task-hover:hover {
+    background-color: mediumaquamarine;
+    border-color: var(--bs-success);
+    transition: ease 0.5s;
+}
+.bday-hover {
+    background-color: lightpink;
+    border-color: palevioletred;
+    transition: ease 0.5s;
+}
+
+.yellow-hover:hover {
+    background-color: var(--bs-warning);
     border-color: var(--bs-success);
     opacity: 10%;
     transition: ease 0.5s;
