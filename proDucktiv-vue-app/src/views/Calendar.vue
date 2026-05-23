@@ -93,7 +93,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="col text-center bg-warning bg-opacity-25">
+                        <td class="col text-center bg-success bg-opacity-50">
                             <div
                                 class="card bday-hover"
                                 style="width: 100%"
@@ -101,9 +101,9 @@
                             >
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
-                                        Brithday message
+                                        Happy Birthday &#x1F381
                                     </h5>
-                                    <p class="card-text">Happy Brithday &#x1F381 &#x1F382 &#x1F389</p>
+                                    <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
                                 </div>
                             </div>
                             <div
@@ -208,7 +208,7 @@
                             v-for="day in getWeekArray()"
                             @click="selectedDate = day.date"
                             :class="
-                                day.isSelected ? 'bg-warning bg-opacity-25' : ''
+                                day.isSelected ? 'bg-success bg-opacity-50' : 'green-hover'
                             "
                         >
                             <div
@@ -218,9 +218,9 @@
                             >
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
-                                        Brithday message
+                                        Happy Birthday &#x1F381
                                     </h6>
-                                    <p class="card-text">Happy Brithday &#x1F381 &#x1F382 &#x1F389</p>
+                                    <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
                                 </div>
                             </div>
                             <div
@@ -337,7 +337,7 @@
                             v-for="(day, di) in week"
                             :class="
                                 day?.isSelected
-                                    ? 'bg-warning bg-opacity-25 month-calendar-body'
+                                    ? 'bg-success bg-opacity-50 month-calendar-body'
                                     : 'day-cell green-hover'
                             "
                             @click="selectDateMonth(day)"
@@ -682,7 +682,7 @@ export default {
 .green-hover:hover {
     background-color: var(--bs-success);
     border-color: var(--bs-success);
-    opacity: 50%;
+    opacity: 45%;
     transition: ease 0.5s;
 }
 .task-hover:hover {
@@ -691,7 +691,7 @@ export default {
     transition: ease 0.5s;
 }
 .bday-hover {
-    background-color: lightpink;
+    background-color: var(--bs-warning);
     border-color: palevioletred;
     transition: ease 0.5s;
 }
