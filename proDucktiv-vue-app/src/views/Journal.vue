@@ -4,18 +4,15 @@
         <!-- Sidebar -->
         <div class="d-flex flex-column border-end bg-light" style="width:240px;min-width:240px;">
 
-            <!-- Sidebar Heading -->
             <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
                 <span class="fw-bold">Journals</span>
                 <button class="btn btn-sm btn-outline-secondary" @click="openNewJournal">+ New</button>
             </div>
 
-            <!-- Journal List -->
             <div class="overflow-y-auto flex-grow-1">
                 <div v-if="loadingJournals" class="p-3 text-muted small">Loading...</div>
                 <div v-else-if="journals.length === 0" class="p-3 text-muted small">No journals yet.</div>
 
-                <!-- Journal Items (If not null) -->
                 <div v-for="j in journals" :key="j.journal_id" class="p-3 border-bottom"
                     :class="activeJournal?.journal_id === j.journal_id ? 'bg-primary text-white' : ''"
                     style="cursor:pointer;" @click="loadJournal(j)">
@@ -81,27 +78,38 @@
                     </div>
                 </div>
 
-                <!-- Page + pagination -->
-                <div
-                    class="flex-grow-1 d-flex flex-column align-items-center justify-content-start p-4 bg-secondary bg-opacity-10 overflow-y-auto">
+                <!-- Writing area -->
+                <div class="flex-grow-1 d-flex flex-column p-4 overflow-hidden">
+                    <textarea
+                        ref="textareaRef"
+                        v-model="pages[currentPage]"
+                        class="flex-grow-1 w-100 border-0"
+                        style="resize:none;outline:none;font-size:15px;line-height:1.8;overflow:hidden;"
+                        placeholder="Begin writing…"
+                        @keydown="onKeydown"
+                        @input="onInput"
+                    ></textarea>
 
-                    <!-- A4 paper -->
-                    <div class="bg-white border p-5 d-flex flex-column" style="width:794px;height:1040px;">
-                        <textarea ref="textareaRef" v-model="pages[currentPage]" class="flex-grow-1 w-100 border-0"
-                            style="resize:none;outline:none;font-size:15px;line-height:1.8;overflow:hidden;"
-                            placeholder="Begin writing…" @keydown="onKeydown" @input="onInput"></textarea>
-                        <div class="text-end text-muted border-top pt-1" style="font-size:11px;">
-                            Page {{ currentPage + 1 }}
-                        </div>
+                    <!-- Bottom bar -->
+                    <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2 flex-shrink-0">
+                        <Paginate
+                            v-if="pages.length > 1"
+                            :page-count="pages.length"
+                            :click-handler="goToPage"
+                            prev-text="← Prev"
+                            next-text="Next →"
+                            container-class="pagination pagination-sm mb-0"
+                            page-class="page-item"
+                            page-link-class="page-link"
+                            prev-class="page-item"
+                            prev-link-class="page-link"
+                            next-class="page-item"
+                            next-link-class="page-link"
+                            :force-page="currentPage + 1"
+                        />
+                        <div v-else></div>
+                        <span class="text-muted" style="font-size:11px;">Page {{ currentPage + 1 }}</span>
                     </div>
-
-                    <!-- Pagination -->
-                    <Paginate v-if="pages.length > 1" class="mt-3 pagination pagination-sm justify-content-center mb-0"
-                        :page-count="pages.length" :click-handler="goToPage" prev-text="← Prev" next-text="Next →"
-                        container-class="pagination pagination-sm justify-content-center mb-0" page-class="page-item"
-                        page-link-class="page-link" prev-class="page-item" prev-link-class="page-link"
-                        next-class="page-item" next-link-class="page-link" :force-page="currentPage + 1" />
-
                 </div>
 
             </div>
@@ -145,8 +153,7 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 import Paginate from 'vuejs-paginate-next'
 
 const JOURNALS_API = '/cos30043/s105337347/proDucktiv/resources/api_journals.php'
-const USER_ID = 2  // temporary — replace with the logged-in user's real ID
-
+const USER_ID = 2 // replace with the logged-in user's real ID
 const PAGE_CHAR_LIMIT = 1800
 
 const STATUS_OPTIONS = [
@@ -166,7 +173,6 @@ const showDeleteModal = ref(false)
 const form = reactive({
     journal_name: '',
     journal_date: todayISO(),
-    journal_body: '',
     journal_status: '',
 })
 
@@ -179,6 +185,7 @@ let toastTimer = null
 
 onMounted(fetchJournals)
 
+// Fetch Journals
 async function fetchJournals() {
     loadingJournals.value = true
     try {
@@ -192,15 +199,15 @@ async function fetchJournals() {
     }
 }
 
+// Save Journal
 async function saveJournal() {
     if (!isDirty.value && activeJournal.value) return
     saving.value = true
-    form.journal_body = pages.value.join('')
 
     const payload = {
         user_id: USER_ID,
         journal_name: form.journal_name || 'Untitled',
-        journal_body: form.journal_body,
+        journal_body: pages.value.join(''),
         journal_date: form.journal_date,
         journal_status: form.journal_status || null,
     }
@@ -239,6 +246,7 @@ async function saveJournal() {
     }
 }
 
+// Delete Journal
 async function deleteJournal() {
     showDeleteModal.value = false
     try {
@@ -255,18 +263,19 @@ async function deleteJournal() {
     }
 }
 
+// New Journal
 function openNewJournal() {
     activeJournal.value = null
     creatingNew.value = true
     isDirty.value = false
     form.journal_name = ''
     form.journal_date = todayISO()
-    form.journal_body = ''
     form.journal_status = ''
     pages.value = ['']
     currentPage.value = 0
 }
 
+// Load Journal
 function loadJournal(j) {
     activeJournal.value = j
     creatingNew.value = false
@@ -277,6 +286,7 @@ function loadJournal(j) {
     splitBodyIntoPages(j.journal_body || '')
 }
 
+// Page Management
 function splitBodyIntoPages(body) {
     if (!body) { pages.value = ['']; currentPage.value = 0; return }
     const chunks = []
@@ -290,7 +300,6 @@ function splitBodyIntoPages(body) {
 }
 
 function onKeydown(e) {
-    // Backspace at the very start of a page merges it back into the previous page
     if (e.key === 'Backspace') {
         const ta = textareaRef.value
         if (ta && ta.selectionStart === 0 && ta.selectionEnd === 0 && currentPage.value > 0) {
@@ -301,7 +310,7 @@ function onKeydown(e) {
                 pages.value[currentPage.value - 1] = prev + cur
                 pages.value.splice(currentPage.value, 1)
             }
-            currentPage.value = currentPage.value - 1
+            currentPage.value--
             nextTick(() => {
                 if (textareaRef.value) textareaRef.value.setSelectionRange(prev.length, prev.length)
             })
@@ -310,11 +319,9 @@ function onKeydown(e) {
         return
     }
 
-    // Let all other navigation / modifier keys through untouched
-    const nav = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Tab', 'Delete', 'Escape', 'Enter']
-    if (nav.includes(e.key) || e.ctrlKey || e.metaKey) return
+    const navigationKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Tab', 'Delete', 'Escape', 'Enter']
+    if (navigationKeys.includes(e.key) || e.ctrlKey || e.metaKey) return
 
-    // Block printable chars when the page is full — auto-advance instead
     if (pages.value[currentPage.value].length >= PAGE_CHAR_LIMIT) {
         e.preventDefault()
         nextPage()
@@ -322,7 +329,6 @@ function onKeydown(e) {
 }
 
 function onInput() {
-    // Safety net: if v-model somehow lets content exceed the limit, split the overflow off
     const text = pages.value[currentPage.value]
     if (text.length > PAGE_CHAR_LIMIT) {
         const kept = text.slice(0, PAGE_CHAR_LIMIT)
@@ -348,6 +354,7 @@ function nextPage() {
     currentPage.value++
 }
 
+// Status Selection
 function setStatus(value) {
     form.journal_status = form.journal_status === value ? '' : value
     markDirty()
@@ -358,6 +365,7 @@ function statusBadgeClass(status, isActive) {
     return status === 'great' ? 'text-bg-success' : status === 'average' ? 'text-bg-warning' : 'text-bg-danger'
 }
 
+// Utilities
 function markDirty() {
     isDirty.value = true
 }
@@ -380,7 +388,6 @@ function showToast(message, type = 'success') {
     toast.type = type
     toastTimer = setTimeout(() => { toast.show = false }, 2800)
 }
-
 </script>
 
 <style scoped>
