@@ -11,16 +11,16 @@ import Calendar from "../views/Calendar.vue";
 import Journal from "../views/Journal.vue";
 
 const routes = [
-  { path: "/", component: Welcome },
-  { path: "/about", component: About },
+  { path: "/:userId?", component: Welcome },
+  { path: "/about/:userId?", component: About },
   { path: "/sign-in", component: SignIn },
   { path: "/registration", component: Registration },
-  { path: "/account", component: Account },
-  { path: "/task", component: Task },
-  { path: "/task-creator", component: TaskCreator },
-  { path: "/task-editor", component: TaskEditor },
-  { path: "/calendar", component: Calendar },
-  { path: "/journal", component: Journal },
+  { path: "/account/:userId?", component: Account },
+  { path: "/task/:userId?", component: Task },
+  { path: "/task-creator/:userId?", component: TaskCreator },
+  { path: "/task-editor/:userId?/:id?", component: TaskEditor },
+  { path: "/calendar/:userId?", component: Calendar },
+  { path: "/journal/:userId?", component: Journal },
 ];
 
 const router = createRouter({

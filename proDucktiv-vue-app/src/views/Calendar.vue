@@ -1,5 +1,5 @@
 <template>
-    <div class='container'>
+    <div class="container">
         <div class="row py-2">
             <div class="col-12 text-center">
                 <h1>Calendar</h1>
@@ -7,22 +7,37 @@
         </div>
         <div class="row">
             <div class="col d-flex flex-row gap-3 py-2 justify-content-center">
-                <button type="button" :class="selectedView === 'day'
-                    ? 'btn btn-success '
-                    : 'btn btn-secondary button-calendar-view'
-                    " @click="selectedView = 'day'">
+                <button
+                    type="button"
+                    :class="
+                        selectedView === 'day'
+                            ? 'btn btn-success '
+                            : 'btn btn-secondary button-calendar-view green-hover'
+                    "
+                    @click="selectedView = 'day'"
+                >
                     Daily
                 </button>
-                <button type="button" :class="selectedView === 'week'
-                    ? 'btn btn-success'
-                    : 'btn btn-secondary button-calendar-view'
-                    " @click="selectedView = 'week'">
+                <button
+                    type="button"
+                    :class="
+                        selectedView === 'week'
+                            ? 'btn btn-success'
+                            : 'btn btn-secondary green-hover'
+                    "
+                    @click="selectedView = 'week'"
+                >
                     Weekly
                 </button>
-                <button type="button" :class="selectedView === 'month'
-                    ? 'btn btn-success'
-                    : 'btn btn-secondary button-calendar-view'
-                    " @click="selectedView = 'month'">
+                <button
+                    type="button"
+                    :class="
+                        selectedView === 'month'
+                            ? 'btn btn-success'
+                            : 'btn btn-secondary green-hover'
+                    "
+                    @click="selectedView = 'month'"
+                >
                     Monthly
                 </button>
             </div>
@@ -35,33 +50,52 @@
         </div>
         <div class="row py-2">
             <div class="col text-center">
-                <button class="btn btn-secondary button-change-date" type="button" @click="prevDay">
-                    Prev Day
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="prevDay"
+                >
+                    <
                 </button>
             </div>
             <div class="col text-center">
                 <h3>{{ selectedDate.toDateString() }}</h3>
             </div>
             <div class="col text-center">
-                <button class="btn btn-secondary button-change-date" type="button" @click="nextDay">
-                    Next Day
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="nextDay"
+                >
+                    >
                 </button>
             </div>
         </div>
         <div class="row">
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th scope="col" class="col-1">Time</th>
-                        <th scope="col" class="col-11 text-center bg-success">
-                            <h4>{{ selectedDate.toDateString().split(" ").slice(0, 3).join(" ") }}</h4>
+                        <th
+                            scope="col"
+                            class="col text-center bg-success bg-opacity-75"
+                        >
+                            <h4>
+                                {{
+                                    selectedDate
+                                        .toDateString()
+                                        .split(" ")
+                                        .slice(0, 3)
+                                        .join(" ")
+                                }}
+                            </h4>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="t in dayTimeData.hourTimeArray">
-                        <th scope="row">{{ t }}</th>
-                        <td></td>
+                    <tr>
+                        <td class="col text-center bg-warning bg-opacity-25">
+                            <p>Content goes here</p>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -74,22 +108,38 @@
         </div>
         <div class="row">
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date" type="button" @click="prevWeek">
-                    Prev Week
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="prevWeek"
+                >
+                    <<
                 </button>
-                <button class="btn btn-secondary button-change-date" type="button" @click="prevDay">
-                    Prev Day
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="prevDay"
+                >
+                    <
                 </button>
             </div>
             <div class="col text-center">
                 <h3>{{ selectedDate.toDateString() }}</h3>
             </div>
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date" type="button" @click="nextDay">
-                    Next Day
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="nextDay"
+                >
+                    >
                 </button>
-                <button class="btn btn-secondary button-change-date" type="button" @click="nextWeek">
-                    Next Week
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="nextWeek"
+                >
+                    >>
                 </button>
             </div>
         </div>
@@ -97,9 +147,16 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th scope="col" class="col-1">Time</th>
-                        <th scope="col" v-for="day in getWeekArray()" :class="day.isSelected ? 'bg-success bg-opacity-100' : 'day-cell'
-                            " @click="selectedDate = day.date">
+                        <th
+                            scope="col"
+                            v-for="day in getWeekArray()"
+                            :class="
+                                day.isSelected
+                                    ? 'bg-success bg-opacity-75'
+                                    : 'green-hover bg-success bg-opacity-50'
+                            "
+                            @click="selectedDate = day.date"
+                        >
                             {{
                                 day.date
                                     .toDateString()
@@ -111,15 +168,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="t in dayTimeData.hourTimeArray">
-                        <th scope="row">{{ t }}</th>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                    <tr>
+                        <td
+                            v-for="day in getWeekArray()"
+                            @click="selectedDate = day.date"
+                            :class="
+                                day.isSelected ? 'bg-warning bg-opacity-25' : ''
+                            "
+                        >
+                            <p>Content goes here</p>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -132,57 +190,98 @@
         </div>
         <div class="row">
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date" type="button" @click="prevMonth">
-                    Prev Month
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="prevMonth"
+                >
+                    <<<
                 </button>
-                <button class="btn btn-secondary button-change-date" type="button" @click="prevWeek">
-                    Prev Week
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="prevWeek"
+                >
+                    <<
                 </button>
-                <button class="btn btn-secondary button-change-date" type="button" @click="prevDay">
-                    Prev Day
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="prevDay"
+                >
+                    <
                 </button>
             </div>
             <div class="col text-center">
                 <h3>{{ getStringDate }}</h3>
             </div>
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date" type="button" @click="nextDay">
-                    Next Day
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="nextDay"
+                >
+                    >
                 </button>
-                <button class="btn btn-secondary button-change-date" type="button" @click="nextWeek">
-                    Next Week
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="nextWeek"
+                >
+                    >>
                 </button>
-                <button class="btn btn-secondary button-change-date" type="button" @click="nextMonth">
-                    Next Month
+                <button
+                    class="btn btn-secondary button-change-date rounded-5 green-hover"
+                    type="button"
+                    @click="nextMonth"
+                >
+                    >>>
                 </button>
             </div>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered'">
+            <table class="table table-bordered">
                 <caption class="text-center caption-top">
-                    {{ getMonthName(selectedDate?.getMonth()) }}
+                    {{
+                        getMonthName(selectedDate?.getMonth())
+                    }}
                 </caption>
-                <thead class="month-calendar-head">
+                <thead>
                     <tr>
-                        <th scope="col">Monday</th>
-                        <th scope="col">Tuesday</th>
-                        <th scope="col">Wednesday</th>
-                        <th scope="col">Thursday</th>
-                        <th scope="col">Friday</th>
-                        <th scope="col">Saturday</th>
-                        <th scope="col">Sunday</th>
+                        <th
+                            scope="col"
+                            v-for="(dayName, dayNameIndex) in monthData.dayName"
+                            :class="
+                                (selectedDate.getDay() + 6) % 7 === dayNameIndex
+                                    ? 'bg-success bg-opacity-75'
+                                    : 'bg-success bg-opacity-25'
+                            "
+                        >
+                            {{ dayName }}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(week, wi) in getPaddedMonthArray()">
-                        <td v-for="(day, di) in week" :class="day?.isSelected ? 'bg-success bg-opacity-75 month-calendar-body' : 'day-cell month-calendar-body'
-                            " @click="selectDateMonth(day)">
-                            {{ day?.date.getDate() }}
+                        <td
+                            v-for="(day, di) in week"
+                            :class="
+                                day?.isSelected
+                                    ? 'bg-success bg-opacity-50 month-calendar-body'
+                                    : 'day-cell green-hover '
+                            "
+                            @click="selectDateMonth(day)"
+                        >
+                            <h5>{{ day?.date.getDate() }}</h5>
+                            <p v-if="day != null">Content goes here</p>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+    </div>
+    <div class="container">
+        <div class="row"></div>
     </div>
 </template>
 
@@ -199,9 +298,22 @@ export default {
             selectedView: "day",
             selectedDate: new Date(), // must be stored as date object
             task: null, // stores task information start and due dates
-            isDarkMode: true,
             isBirthday: false,
             dayTimeData: dayTimeData,
+            monthData: monthData,
+            USER_API: "",
+            TASK_API: "",
+            JOURNAL_API: "",
+            users: [],
+            tasks: [],
+            journals: [],
+            loggedInUserID: "''",
+            userDbStatusMessage: "",
+            userDbError: "",
+            taskDbStatusMessage: "",
+            taskDbError: "",
+            journalDbStatusMessage: "",
+            journalDbError: "",
         };
     },
     computed: {
@@ -211,15 +323,12 @@ export default {
             return this.selectedDate?.toDateString() ?? "";
         },
     },
-    mounted() { },
+    mounted() {},
     methods: {
         // for time marker in the day view
         getCurrentTime() {
             // returns the current time in HH:MM:SS format
             return new Date().toTimeString().split(" ")[0];
-        },
-        toggleDarkMode() {
-            this.isDarkMode = !this.isDarkMode;
         },
         // goes to the next day in the calendar view
         nextDay() {
@@ -372,11 +481,11 @@ export default {
                 if (dateArray[i] === null) continue;
                 if (
                     dateArray[i].date.getDate() ===
-                    this.selectedDate.getDate() &&
+                        this.selectedDate.getDate() &&
                     dateArray[i].date.getMonth() ===
-                    this.selectedDate.getMonth() &&
+                        this.selectedDate.getMonth() &&
                     dateArray[i].date.getFullYear() ===
-                    this.selectedDate.getFullYear()
+                        this.selectedDate.getFullYear()
                 ) {
                     dateArray[i].isSelected = true;
                 }
@@ -388,9 +497,96 @@ export default {
             // recall to update the array
             this.getPaddedMonthArray();
         },
-        // check if birthday
-        //
+
+        // fetch and read User data
+        readUserData() {
+            fetch(USER_API)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error:${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    this.users = data;
+                    this.userDbStatusMessage = "Successful :)";
+                    this.userDbError = "";
+                })
+                .catch((error) => {
+                    this.userDbError = error.message;
+                });
+        },
+        // fetch and read Tasks data
+        readTasksData() {
+            fetch(TASK_API)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error:${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    this.tasks = data;
+                    this.taskDbStatusMessage = "Successful :)";
+                    this.taskDbError = "";
+                })
+                .catch((error) => {
+                    this.taskDbError = error.message;
+                });
+        },
+        // fetch and read Journal data
+        readJournalData() {
+            fetch(JOURNAL_API)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error:${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    this.journals = data;
+                    this.journalDbStatusMessage = "Successful :)";
+                    this.journalDbError = "";
+                })
+                .catch((error) => {
+                    this.journalDbError = error.message;
+                });
+        },
+        // check for birthday
+        bDayCheck(day) {
+            const formattedDate = [day]
+                .toLocaleDateString("en-au")
+                .replace(/\//g, "-");
+            if (users.id === loggedInUserID && users.dob === formattedDate) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        // filter data Array by selected date and user id
+        getDayData() {},
+        // filter data Array by week array and user id
+        getWeekData() {},
+        // filter data Array by month array and user id
+        getMonthData() {},
     },
 };
 </script>
-<style></style>
+<style>
+.green-hover:hover {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+    opacity: 40%;
+    transition: ease 0.5s;
+}
+.green-td:hover {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+    opacity: 10%;
+    transition: ease 0.5s;
+}
+.day-cell {
+    width: 250px;
+    height: 150px;
+}
+</style>
