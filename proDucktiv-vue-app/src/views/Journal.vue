@@ -136,7 +136,7 @@
 import Paginate from 'vuejs-paginate-next'
 
 const JOURNALS_API = '/cos30043/s105337347/proDucktiv/resources/api_journals.php'
-const USER_ID = 2 // replace with the logged-in user's real ID
+const USER_ID = 2 // replace with the logged-in user's real ID, currently hardcoded for testing
 const PAGE_CHAR_LIMIT = 500
 
 export default {
@@ -191,11 +191,21 @@ export default {
         // Save Journal
         async saveJournal() {
             if (!this.isDirty && this.activeJournal) return
+
+            if (!this.form.journal_name.trim()) {
+                this.showToast('Please enter a journal name.', 'danger')
+                return
+            }
+            if (!this.pages.join('').trim()) {
+                this.showToast('Please write something before saving.', 'danger')
+                return
+            }
+
             this.saving = true
 
             const payload = {
                 user_id: USER_ID,
-                journal_name: this.form.journal_name || 'Untitled',
+                journal_name: this.form.journal_name,
                 journal_body: this.pages.join(''),
                 journal_date: this.form.journal_date,
                 journal_status: this.form.journal_status || null,
@@ -354,7 +364,7 @@ export default {
         todayISO() {
             return new Date().toISOString().split('T')[0]
         },
-        
+
         showToast(message, type = 'success') {
             clearTimeout(this.toastTimer)
             this.toast.show = true
