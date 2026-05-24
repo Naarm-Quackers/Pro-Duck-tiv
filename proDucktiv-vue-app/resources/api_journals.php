@@ -5,13 +5,18 @@
  CREATE TABLE pdt_journals (
     journal_id     INT          NOT NULL AUTO_INCREMENT,
     user_id        INT          NOT NULL,
-    journal_name   VARCHAR(255) NOT NULL DEFAULT 'Untitled',
+    journal_name   VARCHAR(255) NOT NULL,
     journal_body   LONGTEXT,
     journal_date   DATE         NOT NULL,
     journal_status VARCHAR(10)  DEFAULT NULL,
     created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (journal_id)
-)
+    PRIMARY KEY (journal_id),
+    CONSTRAINT fk_pdt_journals_user
+        FOREIGN KEY (user_id) REFERENCES pdt_users(user_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
 */
 
 ob_start();

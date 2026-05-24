@@ -200,6 +200,10 @@ export default {
                 this.showToast('Please write something before saving.', 'danger')
                 return
             }
+            if (!this.form.journal_status) {
+                this.showToast('Please select a mood before saving.', 'danger')
+                return
+            }
 
             this.saving = true
 
@@ -208,7 +212,7 @@ export default {
                 journal_name: this.form.journal_name,
                 journal_body: this.pages.join(''),
                 journal_date: this.form.journal_date,
-                journal_status: this.form.journal_status || null,
+                journal_status: this.form.journal_status,
             }
 
             try {
