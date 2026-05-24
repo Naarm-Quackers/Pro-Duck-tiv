@@ -2,682 +2,504 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
+const Router = useRouter()
 
-// stores all tasks from localstorage
-const tasks = ref([])
+const TaskApiUrl =
+  import.meta.env.VITE_TASK_API_URL ||
+  'http://localhost/Pro-Duck-tiv/proDucktiv-vue-app/resources/api_tasks.php'
 
-// stores the search text from the search box
-const search = ref('')
+const Search = ref('')
+const CurrentTab = ref('Active')
+const Tasks = ref([])
+const IsLoading = ref(false)
+const ErrorMessage = ref('')
 
-// controls the current sidebar filter
-const selectedView = ref('active')
+const ShowConfetti = ref(false)
+const ConfettiPieces = ref([])
 
-// stores the green completion message
-const celebrationMessage = ref('')
+function GetLoggedInUserId() {
+  const possibleKeys = [
+    'currentUser',
+    'loggedInUser',
+    'pdtUser',
+    'user',
+    'authUser',
+    'User'
+  ]
 
-// controls the smooth falling confetti overlay
-const showConfetti = ref(false)
-const confettiPieces = ref([])
+  for (const key of possibleKeys) {
+    const value = localStorage.getItem(key) || sessionStorage.getItem(key)
 
-// reminder setting: tasks due within 48 hours will appear as due soon
-const reminderWindowHours = 48
+    if (!value) continue
 
-// confetti colours copied from the example style: dark green, bootstrap success, lime, warning yellow, and soft white
-const confettiColors = ['#006b5a', '#198754', '#6fb13f', '#c9d900', '#ffc107', '#f8f9fa']
+    try {
+      const parsed = JSON.parse(value)
+      const id = parsed.user_id || parsed.UserId || parsed.userId || parsed.id
 
-// loads saved tasks when this page opens
-onMounted(() => {
-  tasks.value = JSON.parse(localStorage.getItem('tasks')) || []
-})
-
-// saves all task updates back into localstorage
-function saveTasks() {
-  localStorage.setItem('tasks', JSON.stringify(tasks.value))
-}
-
-// checks whether a task is completed
-function isTaskComplete(task) {
-  return task.status === 'Complete' || task.status === 'Finished'
-}
-
-// combines the saved date and time fields into one date object
-function getDueDateTime(task) {
-  if (!task.date) return null
-
-  const taskTime = task.time || '23:59'
-  const due = new Date(`${task.date}T${taskTime}`)
-
-  if (Number.isNaN(due.getTime())) return null
-
-  return due
-}
-
-// calculates the remaining hours before the task deadline
-function getHoursUntilDue(task) {
-  const due = getDueDateTime(task)
-
-  if (!due) return null
-
-  return Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60))
-}
-
-// checks whether a task is overdue
-function isOverdue(task) {
-  const hoursLeft = getHoursUntilDue(task)
-
-  return !isTaskComplete(task) && hoursLeft !== null && hoursLeft < 0
-}
-
-// checks whether a task is due soon but not overdue
-function isDueSoon(task) {
-  const hoursLeft = getHoursUntilDue(task)
-
-  return (
-    !isTaskComplete(task) &&
-    hoursLeft !== null &&
-    hoursLeft >= 0 &&
-    hoursLeft <= reminderWindowHours
-  )
-}
-
-// creates the reminder text shown on task cards
-function getReminderText(task) {
-  const hoursLeft = getHoursUntilDue(task)
-
-  if (hoursLeft === null || isTaskComplete(task)) return ''
-
-  if (hoursLeft < 0) {
-    const overdueHours = Math.abs(hoursLeft)
-    return `overdue by ${overdueHours} hour${overdueHours === 1 ? '' : 's'}`
+      if (id && Number(id) > 0) {
+        return Number(id)
+      }
+    } catch {
+      if (Number(value) > 0) {
+        return Number(value)
+      }
+    }
   }
 
-  if (hoursLeft === 0) return 'due now'
-  if (hoursLeft <= 24) return `due in ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}`
+  const directId =
+    localStorage.getItem('user_id') ||
+    localStorage.getItem('UserId') ||
+    localStorage.getItem('userId') ||
+    sessionStorage.getItem('user_id') ||
+    sessionStorage.getItem('UserId') ||
+    sessionStorage.getItem('userId')
 
-  const daysLeft = Math.ceil(hoursLeft / 24)
-  return `due in ${daysLeft} days`
+  if (directId && Number(directId) > 0) {
+    return Number(directId)
+  }
+
+  return 0
 }
 
-// total task count
-const totalTasks = computed(() => tasks.value.length)
+function BuildTaskApiUrl(params = {}) {
+  const UserId = GetLoggedInUserId()
 
-// active task count
-const activeTasks = computed(() => tasks.value.filter((task) => task.status === 'Active'))
+  if (UserId <= 0) {
+    throw new Error('No logged-in user found. Please sign in before using tasks.')
+  }
 
-// completed task count
-const completedTasks = computed(() => {
-  return tasks.value.filter((task) => isTaskComplete(task))
-})
+  const Url = new URL(TaskApiUrl, window.location.origin)
 
-// high priority task count
-const highPriorityTasks = computed(() => {
-  return tasks.value.filter((task) => task.priority === 'High')
-})
+  Url.searchParams.set('UserId', UserId)
 
-// reminder task count
-const reminderTasks = computed(() => {
-  return tasks.value.filter((task) => isDueSoon(task) || isOverdue(task))
-})
-
-// overdue task count
-const overdueTasks = computed(() => {
-  return tasks.value.filter((task) => isOverdue(task))
-})
-
-// filters tasks using sidebar selection and search input
-const filteredTasks = computed(() => {
-  return tasks.value.filter((task) => {
-    const keyword = search.value.toLowerCase()
-    const searchableText = [
-      task.title,
-      task.type,
-      task.location,
-      task.description,
-      task.priority,
-      task.status,
-    ]
-      .join(' ')
-      .toLowerCase()
-
-    const matchesSearch = searchableText.includes(keyword)
-
-    if (selectedView.value === 'active') {
-      return task.status === 'Active' && matchesSearch
-    }
-
-    if (selectedView.value === 'completed') {
-      return isTaskComplete(task) && matchesSearch
-    }
-
-    if (selectedView.value === 'high') {
-      return task.priority === 'High' && matchesSearch
-    }
-
-    if (selectedView.value === 'reminders') {
-      return (isDueSoon(task) || isOverdue(task)) && matchesSearch
-    }
-
-    return matchesSearch
-  })
-})
-
-// generates smooth falling square confetti like the reference image
-function createSmoothConfettiPieces() {
-  return Array.from({ length: 95 }, (_, index) => {
-    return {
-      id: `${Date.now()}-${index}`,
-      left: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 1.2}s`,
-      duration: `${4.2 + Math.random() * 2.4}s`,
-      size: `${6 + Math.random() * 6}px`,
-      opacity: 0.35 + Math.random() * 0.6,
-      drift: `${Math.random() * 220 - 110}px`,
-      rotate: `${Math.random() * 720 - 360}deg`,
-      color: confettiColors[index % confettiColors.length],
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      Url.searchParams.set(key, value)
     }
   })
+
+  return Url.toString()
 }
 
-// starts the confetti animation
-function triggerConfetti() {
-  confettiPieces.value = createSmoothConfettiPieces()
-  showConfetti.value = true
+function TriggerConfetti() {
+  const Styles = ['circle', 'square', 'strip']
+
+  ConfettiPieces.value = Array.from({ length: 80 }, (_, Index) => ({
+    Id: Index,
+    Left: Math.random() * 100,
+    Delay: Math.random() * 0.4,
+    Duration: 1.8 + Math.random() * 1.6,
+    Size: 6 + Math.random() * 10,
+    Drift: -80 + Math.random() * 160,
+    Style: Styles[Math.floor(Math.random() * Styles.length)]
+  }))
+
+  ShowConfetti.value = true
 
   setTimeout(() => {
-    showConfetti.value = false
-    confettiPieces.value = []
-  }, 6200)
+    ShowConfetti.value = false
+    ConfettiPieces.value = []
+  }, 2600)
 }
 
-// updates task status and triggers confetti when completed
-function updateStatus(task, newStatus) {
-  task.status = newStatus
+async function ReadJsonResponse(Response) {
+  const ResponseText = await Response.text()
 
-  if (newStatus === 'Complete') {
-    task.completedDate = new Date().toLocaleString()
-    celebrationMessage.value = `great work! "${task.title}" has been completed.`
-    triggerConfetti()
+  try {
+    return JSON.parse(ResponseText)
+  } catch {
+    throw new Error(
+      'The task API did not return JSON. Check that api_tasks.php is running through XAMPP/Mercury and that TaskApiUrl is correct.'
+    )
+  }
+}
 
-    setTimeout(() => {
-      celebrationMessage.value = ''
-    }, 2800)
+async function LoadTasks() {
+  IsLoading.value = true
+  ErrorMessage.value = ''
+
+  try {
+    const Response = await fetch(BuildTaskApiUrl())
+    const Data = await ReadJsonResponse(Response)
+
+    if (!Array.isArray(Data)) {
+      throw new Error(Data.error || 'Unable to load tasks from the database.')
+    }
+
+    Tasks.value = Data
+  } catch (Error) {
+    ErrorMessage.value = Error.message
+  } finally {
+    IsLoading.value = false
+  }
+}
+
+function GetTaskDateTime(Task) {
+  if (!Task.Date) return null
+
+  const SafeTime = Task.Time ? String(Task.Time).slice(0, 5) : '23:59'
+  const DateTime = new Date(`${Task.Date}T${SafeTime}`)
+
+  if (Number.isNaN(DateTime.getTime())) return null
+
+  return DateTime
+}
+
+function GetReminderStatus(Task) {
+  const IsCompleted = Number(Task.Completed) === 1 || Task.Completed === true
+
+  if (IsCompleted) {
+    return {
+      Label: 'Completed',
+      ClassName: 'bg-success-subtle text-success border border-success-subtle'
+    }
   }
 
-  if (newStatus === 'Active') {
-    task.completedDate = ''
+  const DateTime = GetTaskDateTime(Task)
+
+  if (!DateTime) {
+    return {
+      Label: 'No Due Date',
+      ClassName: 'bg-secondary-subtle text-secondary border border-secondary-subtle'
+    }
   }
 
-  saveTasks()
+  const Now = new Date()
+  const HoursLeft = (DateTime.getTime() - Now.getTime()) / (1000 * 60 * 60)
+
+  if (HoursLeft < 0) {
+    return {
+      Label: 'Overdue',
+      ClassName: 'bg-danger-subtle text-danger border border-danger-subtle'
+    }
+  }
+
+  if (HoursLeft <= 48) {
+    return {
+      Label: 'Due Soon',
+      ClassName: 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+    }
+  }
+
+  return {
+    Label: 'Upcoming',
+    ClassName: 'bg-info-subtle text-info-emphasis border border-info-subtle'
+  }
 }
 
-// deletes a task from the saved task list
-function deleteTask(id) {
-  tasks.value = tasks.value.filter((task) => task.id !== id)
-  saveTasks()
+const ActiveCount = computed(() =>
+  Tasks.value.filter((Task) => !(Number(Task.Completed) === 1 || Task.Completed === true)).length
+)
+
+const DoneCount = computed(() =>
+  Tasks.value.filter((Task) => Number(Task.Completed) === 1 || Task.Completed === true).length
+)
+
+const DueSoonCount = computed(() =>
+  Tasks.value.filter((Task) => GetReminderStatus(Task).Label === 'Due Soon').length
+)
+
+const OverdueCount = computed(() =>
+  Tasks.value.filter((Task) => GetReminderStatus(Task).Label === 'Overdue').length
+)
+
+const FilteredTasks = computed(() => {
+  return Tasks.value.filter((Task) => {
+    const SearchText = Search.value.toLowerCase().trim()
+
+    const MatchesSearch =
+      (Task.Title || '').toLowerCase().includes(SearchText) ||
+      (Task.Type || '').toLowerCase().includes(SearchText) ||
+      (Task.Location || '').toLowerCase().includes(SearchText) ||
+      (Task.Description || '').toLowerCase().includes(SearchText)
+
+    const IsCompleted = Number(Task.Completed) === 1 || Task.Completed === true
+
+    if (CurrentTab.value === 'Active') {
+      return !IsCompleted && MatchesSearch
+    }
+
+    return IsCompleted && MatchesSearch
+  })
+})
+
+async function ToggleTask(Task) {
+  const IsCompleted = Number(Task.Completed) === 1 || Task.Completed === true
+  const UserId = GetLoggedInUserId()
+
+  const UpdatedTask = {
+    ...Task,
+    UserId,
+    Completed: !IsCompleted
+  }
+
+  try {
+    const Response = await fetch(BuildTaskApiUrl({ TaskId: Task.Id }), {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(UpdatedTask)
+    })
+
+    const Data = await ReadJsonResponse(Response)
+
+    if (!Data.success) {
+      throw new Error(Data.error || 'Unable to update task.')
+    }
+
+    if (!IsCompleted) {
+      TriggerConfetti()
+    }
+
+    await LoadTasks()
+  } catch (Error) {
+    ErrorMessage.value = Error.message
+  }
 }
+
+async function DeleteTask(TaskId) {
+  const ConfirmDelete = confirm('Are you sure you want to delete this task?')
+
+  if (!ConfirmDelete) return
+
+  try {
+    const Response = await fetch(BuildTaskApiUrl({ TaskId }), {
+      method: 'DELETE'
+    })
+
+    const Data = await ReadJsonResponse(Response)
+
+    if (!Data.success) {
+      throw new Error(Data.error || 'Unable to delete task.')
+    }
+
+    await LoadTasks()
+  } catch (Error) {
+    ErrorMessage.value = Error.message
+  }
+}
+
+function EditTask(TaskId) {
+  Router.push(`/task-editor/${TaskId}`)
+}
+
+function CreateTask() {
+  Router.push('/task-creator')
+}
+
+onMounted(() => {
+  LoadTasks()
+})
 </script>
 
 <template>
-  <div class="task-app">
-    <!-- smooth confetti overlay -->
-    <div v-if="showConfetti" class="confetti-layer">
+  <main class="task-page bg-light min-vh-100 py-4 py-lg-5">
+    <div v-if="ShowConfetti" class="confetti-layer" aria-hidden="true">
       <span
-        v-for="piece in confettiPieces"
-        :key="piece.id"
-        class="confetti"
+        v-for="Piece in ConfettiPieces"
+        :key="Piece.Id"
+        class="confetti-piece"
+        :class="Piece.Style"
         :style="{
-          left: piece.left,
-          width: piece.size,
-          height: `calc(${piece.size} * 1.35)`,
-          opacity: piece.opacity,
-          backgroundColor: piece.color,
-          animationDelay: piece.delay,
-          animationDuration: piece.duration,
-          '--drift': piece.drift,
-          '--rotate': piece.rotate,
+          left: Piece.Left + '%',
+          width: Piece.Size + 'px',
+          height: Piece.Size + 'px',
+          animationDelay: Piece.Delay + 's',
+          animationDuration: Piece.Duration + 's',
+          '--drift': Piece.Drift + 'px'
         }"
       ></span>
     </div>
 
-    <!-- sidebar navigation -->
-    <aside class="sidebar">
-      <h2>proDucktiv</h2>
-      <p>Task Manager</p>
-
-      <button :class="{ active: selectedView === 'active' }" @click="selectedView = 'active'">
-        Active Tasks
-        <span>{{ activeTasks.length }}</span>
-      </button>
-
-      <button :class="{ active: selectedView === 'reminders' }" @click="selectedView = 'reminders'">
-        Due Reminders
-        <span>{{ reminderTasks.length }}</span>
-      </button>
-
-      <button :class="{ active: selectedView === 'completed' }" @click="selectedView = 'completed'">
-        Completed History
-        <span>{{ completedTasks.length }}</span>
-      </button>
-
-      <button :class="{ active: selectedView === 'high' }" @click="selectedView = 'high'">
-        High Priority
-        <span>{{ highPriorityTasks.length }}</span>
-      </button>
-
-      <button :class="{ active: selectedView === 'all' }" @click="selectedView = 'all'">
-        All Tasks
-        <span>{{ totalTasks }}</span>
-      </button>
-    </aside>
-
-    <!-- main dashboard -->
-    <main class="main-content">
-      <section class="top-bar">
+    <div class="container-fluid px-3 px-lg-5">
+      <section
+        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4"
+      >
         <div>
-          <h1>Task Dashboard</h1>
-          <p>manage tasks, track progress, and receive due soon reminders</p>
+          <h1 class="display-6 fw-bold text-dark mb-1">Tasks</h1>
+          <p class="text-secondary mb-0">Manage your tasks in one place</p>
         </div>
 
-        <div class="top-actions">
-          <button class="add-btn" @click="router.push('/task-creator')">+</button>
-          <input v-model="search" type="text" placeholder="search task title, type, location, or description" />
-        </div>
+        <button class="btn btn-success btn-lg px-4" type="button" @click="CreateTask">
+          + New Task
+        </button>
       </section>
 
-      <!-- due soon reminder banner -->
-      <section v-if="reminderTasks.length" class="reminder-panel">
-        <div>
-          <h2>Reminder</h2>
-          <p>
-            {{ reminderTasks.length }} task{{ reminderTasks.length === 1 ? '' : 's' }} need attention.
-            {{ overdueTasks.length }} overdue.
-          </p>
-        </div>
-
-        <button @click="selectedView = 'reminders'">view reminders</button>
-      </section>
-
-      <!-- dashboard statistics -->
-      <section class="summary-grid">
-        <div class="summary-card">
-          <h3>{{ totalTasks }}</h3>
-          <p>Total Tasks</p>
-        </div>
-
-        <div class="summary-card">
-          <h3>{{ activeTasks.length }}</h3>
-          <p>Active</p>
-        </div>
-
-        <div class="summary-card warning-card">
-          <h3>{{ reminderTasks.length }}</h3>
-          <p>Due Soon</p>
-        </div>
-
-        <div class="summary-card warning-card">
-          <h3>{{ highPriorityTasks.length }}</h3>
-          <p>High Priority</p>
-        </div>
-      </section>
-
-      <p v-if="celebrationMessage" class="celebration">
-        {{ celebrationMessage }}
-      </p>
-
-      <!-- task display area -->
-      <section class="task-section">
-        <div class="section-header">
-          <h2>{{ selectedView }} tasks</h2>
-        </div>
-
-        <p v-if="filteredTasks.length === 0" class="empty-message">
-          no tasks found in this section.
-        </p>
-
-        <div class="task-list">
-          <article
-            v-for="task in filteredTasks"
-            :key="task.id"
-            :class="['task-card', { 'due-soon-card': isDueSoon(task), 'overdue-card': isOverdue(task) }]"
-          >
-            <div class="task-header">
-              <div>
-                <h3>{{ task.title }}</h3>
-                <p>{{ task.description }}</p>
-              </div>
-
-              <span :class="['priority', task.priority]">
-                {{ task.priority }}
-              </span>
+      <section class="row g-3 mb-4" aria-label="Task summary">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <article class="card h-100 shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+              <p class="text-secondary mb-1">Total</p>
+              <h2 class="h3 fw-bold mb-0">{{ Tasks.length }}</h2>
             </div>
+          </article>
+        </div>
 
-            <p v-if="isDueSoon(task) || isOverdue(task)" :class="['reminder-chip', { danger: isOverdue(task) }]">
-              {{ getReminderText(task) }}
-            </p>
-
-            <div class="task-details">
-              <p><strong>type:</strong> {{ task.type }}</p>
-              <p><strong>date:</strong> {{ task.date }}</p>
-              <p><strong>time:</strong> {{ task.time }}</p>
-              <p><strong>location:</strong> {{ task.location || 'not set' }}</p>
-              <p><strong>created:</strong> {{ task.creationDate }}</p>
-              <p><strong>status:</strong> {{ task.status }}</p>
-
-              <p v-if="task.completedDate">
-                <strong>completed:</strong> {{ task.completedDate }}
-              </p>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <article class="card h-100 shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+              <p class="text-secondary mb-1">Active</p>
+              <h2 class="h3 fw-bold mb-0">{{ ActiveCount }}</h2>
             </div>
+          </article>
+        </div>
 
-            <div class="task-actions">
-              <select :value="task.status" @change="updateStatus(task, $event.target.value)">
-                <option value="Active">Active</option>
-                <option value="Complete">Complete</option>
-              </select>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <article class="card h-100 shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body">
+              <p class="text-secondary mb-1">Due Soon</p>
+              <h2 class="h3 fw-bold mb-0 text-warning-emphasis">{{ DueSoonCount }}</h2>
+            </div>
+          </article>
+        </div>
 
-              <button class="delete-btn" @click="deleteTask(task.id)">
-                Delete
-              </button>
-
-              <button class="edit-btn" @click="router.push(`/task-editor/${task.id}`)">
-                Edit
-              </button>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <article class="card h-100 shadow-sm border-0 border-start border-danger border-4">
+            <div class="card-body">
+              <p class="text-secondary mb-1">Overdue</p>
+              <h2 class="h3 fw-bold mb-0 text-danger">{{ OverdueCount }}</h2>
             </div>
           </article>
         </div>
       </section>
-    </main>
-  </div>
+
+      <section class="row g-3 align-items-center mb-4">
+        <div class="col-12 col-lg-7">
+          <label for="TaskSearch" class="visually-hidden">Search tasks</label>
+          <input
+            id="TaskSearch"
+            v-model="Search"
+            type="search"
+            class="form-control form-control-lg"
+            placeholder="Search by title, type, location, or description..."
+          />
+        </div>
+
+        <div class="col-12 col-lg-auto">
+          <div class="btn-group" role="tablist" aria-label="Task status filter">
+            <button
+              type="button"
+              class="btn"
+              :class="CurrentTab === 'Active' ? 'btn-success' : 'btn-outline-success'"
+              @click="CurrentTab = 'Active'"
+            >
+              Active
+              <span class="badge text-bg-light ms-2">{{ ActiveCount }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn"
+              :class="CurrentTab === 'Done' ? 'btn-success' : 'btn-outline-success'"
+              @click="CurrentTab = 'Done'"
+            >
+              Done
+              <span class="badge text-bg-light ms-2">{{ DoneCount }}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div v-if="ErrorMessage" class="alert alert-danger" role="alert">
+        {{ ErrorMessage }}
+      </div>
+
+      <div v-if="IsLoading" class="alert alert-info" role="status">
+        Loading tasks...
+      </div>
+
+      <section v-else class="row g-4" aria-label="Task list">
+        <div v-for="Task in FilteredTasks" :key="Task.Id" class="col-12 col-md-6 col-xl-4">
+          <article class="card task-card h-100 shadow-sm border-0">
+            <div class="card-body d-flex flex-column gap-3">
+              <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                  <h2 class="h5 fw-bold mb-2">{{ Task.Title }}</h2>
+
+                  <div class="d-flex flex-wrap gap-2">
+                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                      {{ Task.Type || 'Task' }}
+                    </span>
+
+                    <span class="badge rounded-pill" :class="GetReminderStatus(Task).ClassName">
+                      {{ GetReminderStatus(Task).Label }}
+                    </span>
+                  </div>
+                </div>
+
+                <input
+                  class="form-check-input mt-1"
+                  type="checkbox"
+                  :checked="Number(Task.Completed) === 1 || Task.Completed === true"
+                  aria-label="Mark task as completed"
+                  @change="ToggleTask(Task)"
+                />
+              </div>
+
+              <p class="card-text text-secondary mb-0">
+                {{ Task.Description || 'No description added.' }}
+              </p>
+
+              <div class="row g-2 mt-auto small">
+                <div class="col-12 col-sm-4">
+                  <div class="border rounded-3 p-2 bg-light h-100">
+                    <span class="text-secondary d-block">Date</span>
+                    <strong>{{ Task.Date || 'Not set' }}</strong>
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-4">
+                  <div class="border rounded-3 p-2 bg-light h-100">
+                    <span class="text-secondary d-block">Time</span>
+                    <strong>{{ Task.Time ? String(Task.Time).slice(0, 5) : 'Not set' }}</strong>
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-4">
+                  <div class="border rounded-3 p-2 bg-light h-100">
+                    <span class="text-secondary d-block">Location</span>
+                    <strong>{{ Task.Location || 'Not set' }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2 pt-2">
+                <button type="button" class="btn btn-outline-success" @click="EditTask(Task.Id)">
+                  Edit
+                </button>
+
+                <button type="button" class="btn btn-outline-warning" @click="ToggleTask(Task)">
+                  {{ Number(Task.Completed) === 1 || Task.Completed === true ? 'Mark Active' : 'Mark Done' }}
+                </button>
+
+                <button type="button" class="btn btn-outline-danger" @click="DeleteTask(Task.Id)">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div v-if="FilteredTasks.length === 0" class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body text-center text-secondary py-5">
+              No tasks found.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 </template>
 
 <style scoped>
-.task-app {
-  display: flex;
-  min-height: 100vh;
-  width: 100%;
-  background: #f8f9fa;
+.task-page {
   font-family: Arial, sans-serif;
-  color: #212529;
-}
-
-.sidebar {
-  width: 260px;
-  background: #ffffff;
-  color: #212529;
-  padding: 30px 22px;
-  flex-shrink: 0;
-  border-right: 1px solid #dee2e6;
-}
-
-.sidebar h2 {
-  margin: 0;
-  font-size: 30px;
-}
-
-.sidebar p {
-  color: #6c757d;
-  margin-bottom: 35px;
-}
-
-.sidebar button {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  color: #495057;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.sidebar button:hover,
-.sidebar button.active {
-  background: #d1e7dd;
-  color: #0f5132;
-}
-
-.sidebar span {
-  background: #fff3cd;
-  color: #664d03;
-  padding: 2px 9px;
-  border-radius: 999px;
-}
-
-.main-content {
-  flex: 1;
-  padding: 42px;
-}
-
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.top-bar h1 {
-  margin: 0;
-  font-size: 40px;
-}
-
-.top-bar p {
-  color: #6c757d;
-}
-
-.top-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.top-actions input {
-  width: 390px;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #ced4da;
-  background: #ffffff;
-}
-
-.add-btn,
-button {
-  background: #198754;
-  color: white;
-  cursor: pointer;
-}
-
-.add-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  border: none;
-  font-size: 26px;
-}
-
-.add-btn:hover,
-button:hover {
-  background: #157347;
-}
-
-.reminder-panel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff3cd;
-  color: #664d03;
-  border: 1px solid #ffecb5;
-  border-left: 6px solid #ffc107;
-  padding: 18px 20px;
-  border-radius: 16px;
-  margin-bottom: 24px;
-}
-
-.reminder-panel h2,
-.reminder-panel p {
-  margin: 0;
-}
-
-.reminder-panel button {
-  border: none;
-  border-radius: 10px;
-  padding: 11px 14px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-  margin-bottom: 28px;
-}
-
-.summary-card {
-  background: white;
-  padding: 24px;
-  border-radius: 18px;
-  border: 1px solid #dee2e6;
-  border-top: 5px solid #198754;
-}
-
-.warning-card {
-  border-top-color: #ffc107;
-}
-
-.summary-card h3 {
-  font-size: 34px;
-  margin: 0;
-}
-
-.summary-card p {
-  color: #6c757d;
-  margin-bottom: 0;
-}
-
-.task-section {
-  background: white;
-  border-radius: 20px;
-  padding: 28px;
-  border: 1px solid #dee2e6;
-}
-
-.task-list {
-  display: grid;
-  gap: 18px;
 }
 
 .task-card {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-  border-left: 6px solid #198754;
-  border-radius: 16px;
-  padding: 22px;
-  box-shadow: 0 8px 20px rgba(33, 37, 41, 0.04);
-}
-
-.task-card.due-soon-card {
-  border-left-color: #ffc107;
-}
-
-.task-card.overdue-card {
-  border-left-color: #dc3545;
-}
-
-.task-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.task-header h3 {
-  margin: 0;
-  font-size: 24px;
-}
-
-.task-header p {
-  color: #6c757d;
-}
-
-.reminder-chip {
-  display: inline-block;
-  background: #fff3cd;
-  color: #664d03;
-  border: 1px solid #ffecb5;
-  border-radius: 999px;
-  padding: 7px 12px;
-  font-weight: bold;
-}
-
-.reminder-chip.danger {
-  background: #f8d7da;
-  color: #842029;
-  border-color: #f5c2c7;
-}
-
-.task-details, .location, .due-date {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 4px 20px;
-  margin-top: 12px;
-}
-
-.task-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-select,
-button {
-  padding: 11px 14px;
-  border-radius: 10px;
-  border: 1px solid #ced4da;
-}
-
-.delete-btn {
-  background: #dc3545;
-}
-
-.delete-btn:hover {
-  background: #bb2d3b;
-}
-
-.priority {
-  height: fit-content;
-  padding: 7px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-.priority.Low {
-  background: #d1e7dd;
-  color: #0f5132;
-}
-
-.priority.Medium {
-  background: #fff3cd;
-  color: #664d03;
-}
-
-.priority.High {
-  background: #f8d7da;
-  color: #842029;
-}
-
-.celebration {
-  background: #d1e7dd;
-  color: #0f5132;
-  padding: 14px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  font-weight: bold;
-  border: 1px solid #badbcc;
-}
-
-.empty-message {
-  color: #6c757d;
-  text-align: center;
-  padding: 45px;
+  border-top: 0.35rem solid #198754 !important;
 }
 
 .confetti-layer {
@@ -685,63 +507,45 @@ button {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 999;
+  z-index: 9999;
 }
 
-.confetti {
+.confetti-piece {
   position: absolute;
-  top: -32px;
+  top: -20px;
   display: block;
-  border-radius: 1px;
-  animation-name: smooth-confetti-fall;
-  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  background: #198754;
+  animation-name: confetti-fall;
+  animation-timing-function: ease-out;
   animation-fill-mode: forwards;
-  will-change: transform, opacity;
 }
 
-@keyframes smooth-confetti-fall {
-  0% {
-    transform: translate3d(0, -40px, 0) rotate(0deg);
-    opacity: 0;
-  }
+.confetti-piece.circle {
+  border-radius: 50%;
+  background: #ffc107;
+}
 
-  12% {
+.confetti-piece.square {
+  border-radius: 3px;
+  background: #198754;
+}
+
+.confetti-piece.strip {
+  width: 6px !important;
+  height: 16px !important;
+  border-radius: 4px;
+  background: #0d6efd;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -20px, 0) rotate(0deg);
     opacity: 1;
   }
 
-  70% {
-    opacity: 0.9;
-  }
-
   100% {
-    transform: translate3d(var(--drift), 110vh, 0) rotate(var(--rotate));
+    transform: translate3d(var(--drift), 110vh, 0) rotate(720deg);
     opacity: 0;
-  }
-}
-
-@media (max-width: 900px) {
-  .task-app {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-  }
-
-  .summary-grid,
-  .task-details {
-    grid-template-columns: 1fr;
-  }
-
-  .top-bar {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .top-actions,
-  .top-actions input {
-    width: 100%;
   }
 }
 </style>
