@@ -38,6 +38,7 @@ If you don’t have a personal access token for this organisations repo one can 
 - [ ] Calendar
 
 ### Dylan:
+- [ ] User Information Database
 - [ ] Registration
 - [ ] Sign Up
 
@@ -66,3 +67,12 @@ If you don’t have a personal access token for this organisations repo one can 
 ### Basic Design Diagram:
 ![Basic Design](/Images/BasicDesign.png)
 
+## Database Tables Info
+- "Table element name" - table element long name, type, [attributes]
+### "pdt_users" Table:
+- "user_id"             - User ID, number, [unique, automatically generated]
+- "user_name"           - Username, text, [unique, min-3]
+- "user_password"       - Password, password, [min-8, include capital letter, include special characters]
+- "user_first_name"     - First name, text, [letters only]
+- "user_last_name"      - Last name, text, [letters only]
+- "user_date_of_birth"  - Date of birth, date, [not in the future, optional]

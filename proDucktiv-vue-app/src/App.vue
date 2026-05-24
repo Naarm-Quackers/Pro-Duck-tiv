@@ -2,6 +2,8 @@
   import Menu from './components/Menu.vue'
 </script>
 <template>
-  <Menu />
-  <router-view />
+  <v-app>
+    <Menu />
+    <router-view />
+  </v-app>
 </template>
