@@ -37,6 +37,7 @@ If you don’t have a personal access token for this organisations repo one can 
 ### Eilia:
 - [ ] About
 - [ ] Calendar
+- [ ] Menu / Navbar
 
 ### Dylan:
 - [ ] User Information Database
