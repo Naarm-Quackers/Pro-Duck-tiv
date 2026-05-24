@@ -11,7 +11,7 @@
 
         <!-- Sidebar (offcanvas on mobile, inline on desktop) -->
         <div id="journalSidebar"
-            class="offcanvas offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0"
+            class="offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0"
             style="width:240px;">
 
             <div class="offcanvas-header d-md-none border-bottom">
