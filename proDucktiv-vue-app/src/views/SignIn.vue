@@ -1,11 +1,117 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const USERS_API = '/resources/api_users.php'
+
+const router = useRouter()
+const loginUsername = ref('')
+const loginPassword = ref('')
+const loginError = ref('')
+const isSigningIn = ref(false)
+
+onMounted(() => {
+    try {
+        const raw = localStorage.getItem('currentUser')
+        if (raw) {
+            router.replace('/')
+        }
+    } catch {
+        // no-op
+    }
+})
+
+const signIn = async () => {
+    loginError.value = ''
+
+    if (!loginUsername.value || !loginPassword.value) {
+        loginError.value = 'Please enter both username and password.'
+        return
+    }
+
+    isSigningIn.value = true
+
+    try {const response = await fetch(USERS_API)
+        
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+        }
+
+        const users = await response.json()
+        const rows = Array.isArray(users) ? users : []
+
+        const matchedUser = rows.find(
+            (user) =>
+                String(user.user_name) === loginUsername.value &&
+                String(user.user_password) === loginPassword.value
+        )
+
+        if (!matchedUser) {
+            loginError.value = 'Invalid username or password.'
+            return
+        }
+
+        const normalizedUser = {
+            ...matchedUser,
+            user_id: matchedUser.user_id,
+            user_name: matchedUser.user_name,
+            user_first_name: matchedUser.user_first_name,
+            user_last_name: matchedUser.user_last_name,
+            user_date_of_birth: matchedUser.user_date_of_birth
+        }
+
+        localStorage.setItem('currentUser', JSON.stringify(normalizedUser))
+        router.push('/')
+    } catch (error) {
+        loginError.value = error instanceof Error ? error.message : 'Sign in failed. Please try again.'
+    } finally {
+        isSigningIn.value = false
+    }
+}
+</script>
+
 <template>
-    <div class='container'>
-        <div class='row'>
-            <div class='col-4'>
-                <h1>Sign In Page</h1>
-            </div>
-            <div class='col-8'>
-                <button type="button" class="btn btn-success">Bootstrap Test</button>
+    <div class="container mt-5" style="max-width: 640px;">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 mb-3">Sign In</h1>
+
+                <form @submit.prevent="signIn">
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Username</label>
+                        <input
+                            v-model="loginUsername"
+                            type="text"
+                            class="form-control"
+                            autocomplete="username"
+                        />
+                    </div>
+
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Password</label>
+                        <input
+                            v-model="loginPassword"
+                            type="password"
+                            class="form-control"
+                            autocomplete="current-password"
+                        />
+                    </div>
+
+                    <div v-if="loginError" class="alert alert-danger py-2" role="alert">
+                        {{ loginError }}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success" :disabled="isSigningIn">
+                            {{ isSigningIn ? 'Signing In...' : 'Sign In' }}
+                        </button>
+
+                        <router-link to="/registration" class="btn btn-outline-secondary">
+                            Create Account
+                        </router-link>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
