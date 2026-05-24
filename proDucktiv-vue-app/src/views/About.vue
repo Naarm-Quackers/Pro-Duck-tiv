@@ -18,11 +18,7 @@
                 </p>
             </div>
             <div class="col-lg-6 col-12 p-3">
-                <img
-                    src="../assets/images/planner.webp"
-                    alt="Planner image"
-                    width="480px"
-                />
+                <img src="../assets/images/planner.webp" alt="Planner image" width="480px" />
             </div>
             <hr />
         </div>
@@ -77,65 +73,11 @@
                 <p>
                     The calendar is used to get an overview of your tasks and
                     deadlines as well as view the journal notes you have made on
-                    a particular day. It can be used to access all note and
-                    tasks made through a visual interface, allowing you to make
-                    any edits or deletions on the done on the fly. Task can also
-                    be dragged with the mouse and moved to different date
-                    changing the deadline without having to manually edit the
-                    task.
+                    a particular day, week or month.
                 </p>
             </div>
             <div class="col-lg-6 col-12 p-3">
                 <img src="" alt="Calendar" />
-            </div>
-        </div>
-        <hr />
-    </div>
-    <div class="container">
-        <div class="row p-3">
-            <h2 id="about-subtitle">About the ProDuctive Team</h2>
-        </div>
-        <div class="row">
-            <div class="col p-3">
-                <h3 id="about-name-title">Adam</h3>
-                <p></p>
-                <h4>Contributions</h4>
-                <p></p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col p-3">
-                <h3 id="about-name-title">Amy</h3>
-                <p></p>
-                <h4>Contributions</h4>
-                <p></p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col p-3">
-                <h3 id="about-name-title">Eilia</h3>
-                <p></p>
-                <h4>Contributions</h4>
-                <p>
-                    Worked on the About and Calendar pages, adding advance
-                    fetures to the Calendar page
-                </p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col p-3">
-                <h3 id="about-name-title">Dylan</h3>
-                <p></p>
-                <h4>Contributions</h4>
-                <p></p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col p-3">
-                <h3 id="about-name-title">Justin</h3>
-                <p></p>
-                <h4>Contributions</h4>
-                <p></p>
             </div>
         </div>
         <hr />

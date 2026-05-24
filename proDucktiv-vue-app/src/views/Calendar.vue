@@ -69,7 +69,7 @@
                 <tbody>
                     <tr>
                         <td class="col text-center bg-success bg-opacity-50">
-                            <div class="card bday-hover" style="width: 100%" v-if="true">
+                            <div class="card bday-hover " style="width: 100%" v-if="bDayCheck(selectedDate)">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
                                         Happy Birthday &#x1F381
@@ -77,20 +77,21 @@
                                     <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
+                            <div class="card task-hover" style="width: 100%" v-for="task in getSelectedDayTaskData()">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
-                                        Tasks for Today
+                                        {{ task.task_name }}
                                     </h5>
-                                    <p class="card-text">task description</p>
+                                    <p class="card-text">{{ task.task_description }}</p>
+                                    <p class="card-text">Due: {{ task.task_time }}</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
+                            <div class="card task-hover" style="width: 100%"
+                                v-for="journal in getSelectedDayJournalData()">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
-                                        Todays Journal
+                                        {{ journal.journal_title }}
                                     </h5>
-                                    <p class="card-text">Journal entry</p>
                                 </div>
                             </div>
                         </td>
@@ -149,7 +150,7 @@
                     <tr>
                         <td v-for="day in getWeekArray()" @click="selectedDate = day.date" :class="day.isSelected ? 'bg-success bg-opacity-50' : 'green-hover'
                             ">
-                            <div class="card bday-hover" style="width: 100%" v-if="true">
+                            <div class="card bday-hover" style="width: 100%" v-if="bDayCheck(day.date)">
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
                                         Happy Birthday &#x1F381
@@ -157,7 +158,7 @@
                                     <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
+                            <div class="card task-hover" style="width: 100%" v-for="task in day.tasks">
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
                                         Tasks for Today
@@ -165,7 +166,7 @@
                                     <p class="card-text">task description</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
+                            <div class="card task-hover" style="width: 100%" v-for="journal in day.journals">
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
                                         Todays Journal
@@ -242,24 +243,24 @@
                                 <hr>
                             </h5>
                             <div v-if="day != null">
-                                <div class="card bday-hover" style="width: 100%" v-if="true">
+                                <div class="card bday-hover" style="width: 100%" v-if="bDayCheck(day.date)">
                                     <div class="card-body p-1">
                                         <h6 class="card-title fw-bold">
                                             Happy Birthday &#x1F381
                                         </h6>
                                     </div>
                                 </div>
-                                <div class="card task-hover" style="width: 100%" v-if="true">
+                                <div class="card task-hover" style="width: 100%" v-for="task in day.tasks">
                                     <div class="card-body p-1">
                                         <h6 class="card-title fw-bold">
-                                            Tasks for Today
+                                            {{ task.task_name }}
                                         </h6>
                                     </div>
                                 </div>
-                                <div class="card task-hover" style="width: 100%" v-if="true">
+                                <div class="card task-hover" style="width: 100%" v-for="journal in day.journals">
                                     <div class="card-body p-1">
                                         <h6 class="card-title fw-bold">
-                                            Todays Journal
+                                            {{ journal.journal_title }}
                                         </h6>
                                     </div>
                                 </div>
@@ -273,8 +274,8 @@
     <div class="container">
         <div class="row">
             <div class="col d-flex justify-content-end">
-                <!-- @click=" readUserData(); readTasksData(); readJournalData()" -->
-                <button class="btn btn-warning ">
+
+                <button class="btn btn-warning" @click="readTasksData(); readJournalData()">
                     Refresh
                 </button>
             </div>
@@ -293,14 +294,13 @@ export default {
         return {
             calendarView: ["day", "week", "month"],
             selectedView: "day",
-            selectedDate: new Date(), // must be stored as date object
-            task: null, // stores task information start and due dates
+            selectedDate: new Date(), // set to the current date option
             dayTimeData: dayTimeData,
             monthData: monthData,
             USER_API: "/resources/api_users.php",
-            TASK_API: "/resources/",
-            JOURNAL_API: "/resources/",
-            users: [],
+            TASK_API: "/resources/api_tasks.php",
+            JOURNAL_API: "/resources/api_journals.php",
+            user: null,
             tasks: [],
             journals: [],
             loggedInUserID: "",
@@ -313,6 +313,9 @@ export default {
         };
     },
     computed: {
+        isAuthenticated() {
+            return !!this.user;
+        },
         // print the seltected date as a string
         getStringDate() {
             //return the date as a string, or an empty string if there's no date set.
@@ -320,9 +323,22 @@ export default {
         },
     },
     mounted() {
-        // readUserData();
-        // readTasksData();
-        // readJournalData();
+
+        this.readTasksData();
+        this.readJournalData();
+        // read User Data
+        try {
+            const stored = localStorage.getItem('currentUser');
+            if (!stored) return;
+
+            const parsed = JSON.parse(stored);
+            this.user = {
+                user_id: parsed.user_id,
+                user_date_of_birth: parsed.user_date_of_birth
+            };
+        } catch {
+            this.user = null;
+        }
     },
     methods: {
         // for time marker in the day view
@@ -406,7 +422,16 @@ export default {
                         1 + i,
                     ),
                     isSelected: false,
-                    isBirthday: false,
+                    tasks: this.getTaskDataByDate(new Date(
+                        this.selectedDate.getFullYear(),
+                        this.selectedDate.getMonth(),
+                        1 + i,
+                    )),
+                    journals: this.getJournalDataByDate(new Date(
+                        this.selectedDate.getFullYear(),
+                        this.selectedDate.getMonth(),
+                        1 + i,
+                    )),
                 });
             }
             return monthArray;
@@ -471,7 +496,16 @@ export default {
                         monday.getDate() + i,
                     ),
                     isSelected: false,
-                    isBirthday: false,
+                    tasks: this.getTaskDataByDate(new Date(
+                        monday.getFullYear(),
+                        monday.getMonth(),
+                        monday.getDate() + i,
+                    )),
+                    journals: this.getJournalDataByDate(new Date(
+                        monday.getFullYear(),
+                        monday.getMonth(),
+                        monday.getDate() + i,
+                    )),
                 });
             }
             this.checkSelectedDate(weekArray);
@@ -500,27 +534,10 @@ export default {
             this.getPaddedMonthArray();
         },
 
-        // fetch and read User data
-        readUserData() {
-            fetch(USER_API)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error:${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    this.users = data;
-                    this.userDbStatusMessage = "Successful :)";
-                    this.userDbError = "";
-                })
-                .catch((error) => {
-                    this.userDbError = error.message;
-                });
-        },
-        // fetch and read Tasks data
         readTasksData() {
-            fetch(TASK_API)
+            // make sure to set the user id for the fetch request
+            if (!this.user) return;
+            fetch(`${this.TASK_API}?UserId=${this.user.user_id}`)
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error(`HTTP error:${response.status}`);
@@ -538,7 +555,7 @@ export default {
         },
         // fetch and read Journal data
         readJournalData() {
-            fetch(JOURNAL_API)
+            fetch(this.JOURNAL_API)
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error(`HTTP error:${response.status}`);
@@ -554,30 +571,48 @@ export default {
                     this.journalDbError = error.message;
                 });
         },
-        // formats the date to dd-mm-yyyy format to compare with the values in the database
-        formatDate(day) {
-            const formattedDate = day.toLocaleDateString("en-au").replace(/\//g, "-");
+        // formats the date to yyyy-mm-dd format to compare with the values in the database
+        formatDateFull(day) {
+            const formattedDate = day.toISOString().split("T")[0];
             return formattedDate
+
+        },
+        // remove yyyy from date returns  string mm-dd
+        removeYearFromDate(formattedDay) {
+            return formattedDay.slice(5);
         },
         // check for birthday ---> needs to be reformated to match user database
-        bDayCheck(day) {
-            const formattedDate = formatDate(day)
-            if (users.id === loggedInUserID && users.dob === formattedDate) {
-                this.selectedDate.isBrithday = true;
-            }
+        bDayCheck(date) {
+            if (!this.user) return false;
+            const formattedDate = this.removeYearFromDate(this.formatDateFull(date));
+            const bDay = this.removeYearFromDate(this.user.user_date_of_birth);
+            return bDay === formattedDate;
         },
-        // filter data Array by selected date and user id for tasks
-        getDayTaskData() { },
-        // filter data Array by week array and user id for tasks
-        getWeekTaskData() { },
-        // filter data Array by month array and user id for tasks
-        getMonthTaskData() { },
-        // filter data Array by selected date and user id for journal
-        getDayJournalData() { },
+        // filter data Array by selected date and user id for tasks day view or a sepcific selected date
+        getSelectedDayTaskData() {
+            if (!this.user) return [];
+            return this.tasks.filter(task => task.task_date === this.formatDateFull(this.selectedDate)
+                && task.user_id === this.user.user_id);
+        },
+        // fillter task data for a date
+        getTaskDataByDate(date) {
+            if (!this.user) return [];
+            return this.tasks.filter(task => task.task_date === this.formatDateFull(date)
+                && task.user_id === this.user.user_id);
+        },
+
+        // filter data Array by selected date and user id for journals
+        getSelectedDayJournalData() {
+            if (!this.user) return [];
+            return this.journals.filter(journal => journal.journal_date === this.formatDateFull(this.selectedDate)
+                && journal.user_id === this.user.user_id);
+        },
         // filter data Array by week array and user id for journal
-        getWeekJournalData() { },
-        // filter data Array by month array and user id for journal
-        getMonthJournalData(data) { },
+        getJournalDataByDate(date) {
+            if (!this.user) return [];
+            return this.journals.filter(journal => journal.journal_date === this.formatDateFull(date)
+                && journal.user_id === this.user.user_id);
+        },
     },
 };
 </script>
