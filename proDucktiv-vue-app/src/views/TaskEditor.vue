@@ -41,12 +41,7 @@ function GetLoggedInUserId() {
     }
 
     const directId =
-        localStorage.getItem('user_id') ||
-        localStorage.getItem('UserId') ||
-        localStorage.getItem('userId') ||
-        sessionStorage.getItem('user_id') ||
-        sessionStorage.getItem('UserId') ||
-        sessionStorage.getItem('userId')
+        sessionStorage.getItem('user_id')
 
     if (directId && Number(directId) > 0) {
         return Number(directId)
