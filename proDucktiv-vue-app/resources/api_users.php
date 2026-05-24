@@ -29,7 +29,7 @@ if ($method === 'GET') {
 	$key = isset($_GET['key']) ? $_GET['key'] : '';
 
 	$where = ($fld && $key) ? " WHERE `$fld`='" . mysqli_real_escape_string($conn, $key) . "'" : '';
-	$sql = "SELECT user_id, user_name, user_first_name, user_last_name, user_date_of_birth FROM `$table`$where";
+	$sql = "SELECT user_id, user_name, user_password, user_first_name, user_last_name, user_date_of_birth FROM `$table`$where";
 	$result = mysqli_query($conn, $sql);
 
 	$rows = [];

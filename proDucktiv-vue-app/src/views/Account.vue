@@ -64,12 +64,29 @@
 </template>
 
 <script>
-const USERS_API = '/cos30043/s105337347/proDucktiv/resources/api_users.php'
-const USER_ID = 2 // replace with the logged-in user's real ID
+const USERS_API = '/resources/api_users.php'
+const USER_ID = getLoggedInUserId()
+
+const JOURNALS_API = '/resources/api_journals.php'
+
+function getLoggedInUserId() {
+    try {
+        const user = localStorage.getItem('currentUser')
+        if (!user) return 0 // if not logged in needs to sign in
+
+        const parsed = JSON.parse(user)
+        const id = Number(parsed.user_id)
+
+        return Number.isFinite(id) ? id : 0
+    } catch {
+        return 0
+    }
+}
 
 export default {
     data() {
         return {
+            userId: getLoggedInUserId(),
             user: null,
             loading: false,
             error: null,
@@ -85,6 +102,11 @@ export default {
     },
 
     mounted() {
+        if (!this.userId) {
+            this.error = 'No logged-in user found. Please sign in again.'
+            return
+        }
+
         this.fetchUser()
     },
 
@@ -92,7 +114,11 @@ export default {
         async fetchUser() {
             this.loading = true
             try {
-                const res = await fetch(`${USERS_API}?fld=user_id&key=${USER_ID}`)
+                if (!this.userId) {
+                    throw new Error('Missing logged-in user id')
+                }
+
+                const res = await fetch(`${USERS_API}?fld=user_id&key=${this.userId}`)
                 if (!res.ok) throw new Error(`HTTP ${res.status}`)
                 const rows = await res.json()
                 if (rows.length === 0) throw new Error('User not found')
@@ -129,7 +155,7 @@ export default {
             this.saving = true
             this.saveError = null
             try {
-                const res = await fetch(`${USERS_API}?fld=user_id&key=${USER_ID}`, {
+                const res = await fetch(`${USERS_API}?fld=user_id&key=${this.userId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.editForm),

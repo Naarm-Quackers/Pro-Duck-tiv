@@ -156,8 +156,23 @@
 <script>
 import Paginate from 'vuejs-paginate-next'
 
-const JOURNALS_API = '/cos30043/s105337347/proDucktiv/resources/api_journals.php'
-const USER_ID = 2 // replace with the logged-in user's real ID, currently hardcoded for testing
+const JOURNALS_API = '/resources/api_journals.php'
+
+function getLoggedInUserId() {
+    try {
+        const user = localStorage.getItem('currentUser')
+        if (!user) return 0 // if not logged in needs to sign in
+
+        const parsed = JSON.parse(user)
+        const id = Number(parsed.user_id)
+
+        return Number.isFinite(id) ? id : 0
+    } catch {
+        return 0
+    }
+}
+
+const USER_ID = getLoggedInUserId()
 const PAGE_CHAR_LIMIT = 500
 
 export default {
@@ -165,6 +180,7 @@ export default {
 
     data() {
         return {
+            userId: getLoggedInUserId(),
             STATUS_OPTIONS: [
                 { value: 'great', label: 'Great', activeClass: 'btn-success', inactiveClass: 'btn-outline-success' },
                 { value: 'average', label: 'Average', activeClass: 'btn-warning text-dark', inactiveClass: 'btn-outline-warning' },
@@ -190,6 +206,11 @@ export default {
     },
 
     mounted() {
+        if (!this.userId) {
+            this.showToast('No logged-in user found. Please sign in.', 'danger')
+            return
+        }
+
         this.fetchJournals()
     },
 
@@ -199,9 +220,19 @@ export default {
         async fetchJournals() {
             this.loadingJournals = true
             try {
-                const res = await fetch(`${JOURNALS_API}?fld=user_id&key=${USER_ID}`)
+                const res = await fetch(`${JOURNALS_API}?fld=user_id&key=${this.userId}`)
                 if (!res.ok) throw new Error(`HTTP ${res.status}`)
-                this.journals = await res.json()
+
+                const text = await res.text()
+                let json
+
+                try {
+                    json = JSON.parse(text)
+                } catch {
+                    throw new Error('API returned HTML instead of JSON. Check Vite /resources proxy and PHP server root.')
+                }
+
+                this.journals = Array.isArray(json) ? json : []
             } catch (err) {
                 this.showToast(`Failed to load journals: ${err.message}`, 'danger')
             } finally {
@@ -229,7 +260,7 @@ export default {
             this.saving = true
 
             const payload = {
-                user_id: USER_ID,
+                user_id: this.userId,
                 journal_name: this.form.journal_name,
                 journal_body: this.pages.join(''),
                 journal_date: this.form.journal_date,
