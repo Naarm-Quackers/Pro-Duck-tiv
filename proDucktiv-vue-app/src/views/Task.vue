@@ -1,34 +1,86 @@
 <script setup>
-// Task.vue
-// purpose:
-// - display all tasks from the mysql database.
-// - allow the user to search, filter, complete, edit, and delete tasks.
-// - show reminder status badges such as due soon and overdue.
-// - show confetti when a task is completed.
-
-
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const Router = useRouter()
 
-// api setup
 const TaskApiUrl =
   import.meta.env.VITE_TASK_API_URL ||
   'http://localhost/Pro-Duck-tiv/proDucktiv-vue-app/resources/api_tasks.php'
 
-// reactive page state
 const Search = ref('')
 const CurrentTab = ref('Active')
 const Tasks = ref([])
 const IsLoading = ref(false)
 const ErrorMessage = ref('')
 
-// confetti state
 const ShowConfetti = ref(false)
 const ConfettiPieces = ref([])
 
-// confetti helper
+function GetLoggedInUserId() {
+  const possibleKeys = [
+    'currentUser',
+    'loggedInUser',
+    'pdtUser',
+    'user',
+    'authUser',
+    'User'
+  ]
+
+  for (const key of possibleKeys) {
+    const value = localStorage.getItem(key) || sessionStorage.getItem(key)
+
+    if (!value) continue
+
+    try {
+      const parsed = JSON.parse(value)
+      const id = parsed.user_id || parsed.UserId || parsed.userId || parsed.id
+
+      if (id && Number(id) > 0) {
+        return Number(id)
+      }
+    } catch {
+      if (Number(value) > 0) {
+        return Number(value)
+      }
+    }
+  }
+
+  const directId =
+    localStorage.getItem('user_id') ||
+    localStorage.getItem('UserId') ||
+    localStorage.getItem('userId') ||
+    sessionStorage.getItem('user_id') ||
+    sessionStorage.getItem('UserId') ||
+    sessionStorage.getItem('userId')
+
+  if (directId && Number(directId) > 0) {
+    return Number(directId)
+  }
+
+  return 0
+}
+
+function BuildTaskApiUrl(params = {}) {
+  const UserId = GetLoggedInUserId()
+
+  if (UserId <= 0) {
+    throw new Error('No logged-in user found. Please sign in before using tasks.')
+  }
+
+  const Url = new URL(TaskApiUrl, window.location.origin)
+
+  Url.searchParams.set('UserId', UserId)
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      Url.searchParams.set(key, value)
+    }
+  })
+
+  return Url.toString()
+}
+
 function TriggerConfetti() {
   const Styles = ['circle', 'square', 'strip']
 
@@ -50,7 +102,6 @@ function TriggerConfetti() {
   }, 2600)
 }
 
-// helper: safely read json response from the php api
 async function ReadJsonResponse(Response) {
   const ResponseText = await Response.text()
 
@@ -63,13 +114,12 @@ async function ReadJsonResponse(Response) {
   }
 }
 
-// database read: load tasks
 async function LoadTasks() {
   IsLoading.value = true
   ErrorMessage.value = ''
 
   try {
-    const Response = await fetch(TaskApiUrl)
+    const Response = await fetch(BuildTaskApiUrl())
     const Data = await ReadJsonResponse(Response)
 
     if (!Array.isArray(Data)) {
@@ -84,7 +134,6 @@ async function LoadTasks() {
   }
 }
 
-// reminder helper: combine task date and time
 function GetTaskDateTime(Task) {
   if (!Task.Date) return null
 
@@ -95,7 +144,7 @@ function GetTaskDateTime(Task) {
 
   return DateTime
 }
-// reminder helper: calculate status badge
+
 function GetReminderStatus(Task) {
   const IsCompleted = Number(Task.Completed) === 1 || Task.Completed === true
 
@@ -138,7 +187,6 @@ function GetReminderStatus(Task) {
   }
 }
 
-// computed summary numbers
 const ActiveCount = computed(() =>
   Tasks.value.filter((Task) => !(Number(Task.Completed) === 1 || Task.Completed === true)).length
 )
@@ -155,7 +203,6 @@ const OverdueCount = computed(() =>
   Tasks.value.filter((Task) => GetReminderStatus(Task).Label === 'Overdue').length
 )
 
-// computed task list
 const FilteredTasks = computed(() => {
   return Tasks.value.filter((Task) => {
     const SearchText = Search.value.toLowerCase().trim()
@@ -176,17 +223,18 @@ const FilteredTasks = computed(() => {
   })
 })
 
-// database update: mark task active/done
 async function ToggleTask(Task) {
   const IsCompleted = Number(Task.Completed) === 1 || Task.Completed === true
+  const UserId = GetLoggedInUserId()
 
   const UpdatedTask = {
     ...Task,
+    UserId,
     Completed: !IsCompleted
   }
 
   try {
-    const Response = await fetch(`${TaskApiUrl}?TaskId=${Task.Id}`, {
+    const Response = await fetch(BuildTaskApiUrl({ TaskId: Task.Id }), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -210,15 +258,13 @@ async function ToggleTask(Task) {
   }
 }
 
-// database delete: remove a task
-
 async function DeleteTask(TaskId) {
   const ConfirmDelete = confirm('Are you sure you want to delete this task?')
 
   if (!ConfirmDelete) return
 
   try {
-    const Response = await fetch(`${TaskApiUrl}?TaskId=${TaskId}`, {
+    const Response = await fetch(BuildTaskApiUrl({ TaskId }), {
       method: 'DELETE'
     })
 
@@ -234,7 +280,6 @@ async function DeleteTask(TaskId) {
   }
 }
 
-// navigation handlers
 function EditTask(TaskId) {
   Router.push(`/task-editor/${TaskId}`)
 }
@@ -250,21 +295,27 @@ onMounted(() => {
 
 <template>
   <main class="task-page bg-light min-vh-100 py-4 py-lg-5">
-    <!-- confetti layer -->
     <div v-if="ShowConfetti" class="confetti-layer" aria-hidden="true">
-      <span v-for="Piece in ConfettiPieces" :key="Piece.Id" class="confetti-piece" :class="Piece.Style" :style="{
-        left: Piece.Left + '%',
-        width: Piece.Size + 'px',
-        height: Piece.Size + 'px',
-        animationDelay: Piece.Delay + 's',
-        animationDuration: Piece.Duration + 's',
-        '--drift': Piece.Drift + 'px'
-      }"></span>
+      <span
+        v-for="Piece in ConfettiPieces"
+        :key="Piece.Id"
+        class="confetti-piece"
+        :class="Piece.Style"
+        :style="{
+          left: Piece.Left + '%',
+          width: Piece.Size + 'px',
+          height: Piece.Size + 'px',
+          animationDelay: Piece.Delay + 's',
+          animationDuration: Piece.Duration + 's',
+          '--drift': Piece.Drift + 'px'
+        }"
+      ></span>
     </div>
 
     <div class="container-fluid px-3 px-lg-5">
       <section
-        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
+        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4"
+      >
         <div>
           <h1 class="display-6 fw-bold text-dark mb-1">Tasks</h1>
           <p class="text-secondary mb-0">Manage your tasks in one place</p>
@@ -316,20 +367,33 @@ onMounted(() => {
       <section class="row g-3 align-items-center mb-4">
         <div class="col-12 col-lg-7">
           <label for="TaskSearch" class="visually-hidden">Search tasks</label>
-          <input id="TaskSearch" v-model="Search" type="search" class="form-control form-control-lg"
-            placeholder="Search by title, type, location, or description..." />
+          <input
+            id="TaskSearch"
+            v-model="Search"
+            type="search"
+            class="form-control form-control-lg"
+            placeholder="Search by title, type, location, or description..."
+          />
         </div>
 
         <div class="col-12 col-lg-auto">
           <div class="btn-group" role="tablist" aria-label="Task status filter">
-            <button type="button" class="btn" :class="CurrentTab === 'Active' ? 'btn-success' : 'btn-outline-success'"
-              @click="CurrentTab = 'Active'">
+            <button
+              type="button"
+              class="btn"
+              :class="CurrentTab === 'Active' ? 'btn-success' : 'btn-outline-success'"
+              @click="CurrentTab = 'Active'"
+            >
               Active
               <span class="badge text-bg-light ms-2">{{ ActiveCount }}</span>
             </button>
 
-            <button type="button" class="btn" :class="CurrentTab === 'Done' ? 'btn-success' : 'btn-outline-success'"
-              @click="CurrentTab = 'Done'">
+            <button
+              type="button"
+              class="btn"
+              :class="CurrentTab === 'Done' ? 'btn-success' : 'btn-outline-success'"
+              @click="CurrentTab = 'Done'"
+            >
               Done
               <span class="badge text-bg-light ms-2">{{ DoneCount }}</span>
             </button>
@@ -364,9 +428,13 @@ onMounted(() => {
                   </div>
                 </div>
 
-                <input class="form-check-input mt-1" type="checkbox"
-                  :checked="Number(Task.Completed) === 1 || Task.Completed === true" aria-label="Mark task as completed"
-                  @change="ToggleTask(Task)" />
+                <input
+                  class="form-check-input mt-1"
+                  type="checkbox"
+                  :checked="Number(Task.Completed) === 1 || Task.Completed === true"
+                  aria-label="Mark task as completed"
+                  @change="ToggleTask(Task)"
+                />
               </div>
 
               <p class="card-text text-secondary mb-0">
@@ -434,7 +502,6 @@ onMounted(() => {
   border-top: 0.35rem solid #198754 !important;
 }
 
-/* confetti overlay */
 .confetti-layer {
   position: fixed;
   inset: 0;
@@ -443,7 +510,6 @@ onMounted(() => {
   z-index: 9999;
 }
 
-/* base confetti piece */
 .confetti-piece {
   position: absolute;
   top: -20px;
@@ -454,7 +520,6 @@ onMounted(() => {
   animation-fill-mode: forwards;
 }
 
-/* different confetti shapes */
 .confetti-piece.circle {
   border-radius: 50%;
   background: #ffc107;
@@ -472,7 +537,6 @@ onMounted(() => {
   background: #0d6efd;
 }
 
-/* falling animation */
 @keyframes confetti-fall {
   0% {
     transform: translate3d(0, -20px, 0) rotate(0deg);

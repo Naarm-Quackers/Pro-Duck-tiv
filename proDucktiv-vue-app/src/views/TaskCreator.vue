@@ -1,28 +1,13 @@
 <script setup>
-// TaskCreator.vue
-// purpose:
-// - provide a create task form.
-// - match the TaskEditor field structure:
-//   Title, Type, Date, Time, Location, Description.
-// - send the new task to api_tasks.php using POST.
-
-
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-// vue router returns the user to the task list after creating/cancelling.
 const Router = useRouter()
 
-
-// api setup
-// api_tasks.php must run through a php server.
-
 const TaskApiUrl =
-  import.meta.env.VITE_TASK_API_URL || 'http://localhost/Pro-Duck-tiv/proDucktiv-vue-app/resources/api_tasks.php'
+  import.meta.env.VITE_TASK_API_URL ||
+  'http://localhost/Pro-Duck-tiv/proDucktiv-vue-app/resources/api_tasks.php'
 
-
-// form state
-// variable names are capitalised to match TaskEditor and the task api response.
 const Title = ref('')
 const Type = ref('')
 const Date = ref('')
@@ -30,14 +15,74 @@ const Time = ref('')
 const Location = ref('')
 const Description = ref('')
 
-// feedback state for validation, api errors, and success messages.
 const ErrorMessage = ref('')
 const SuccessMessage = ref('')
 const IsSubmitting = ref(false)
 
-// helper: safely read json response from php
-// if the api url is wrong, the browser often receives html instead of json.
-// this helper makes that problem easier to understand.
+function GetLoggedInUserId() {
+  const possibleKeys = [
+    'currentUser',
+    'loggedInUser',
+    'pdtUser',
+    'user',
+    'authUser',
+    'User'
+  ]
+
+  for (const key of possibleKeys) {
+    const value = localStorage.getItem(key) || sessionStorage.getItem(key)
+
+    if (!value) continue
+
+    try {
+      const parsed = JSON.parse(value)
+      const id = parsed.user_id || parsed.UserId || parsed.userId || parsed.id
+
+      if (id && Number(id) > 0) {
+        return Number(id)
+      }
+    } catch {
+      if (Number(value) > 0) {
+        return Number(value)
+      }
+    }
+  }
+
+  const directId =
+    localStorage.getItem('user_id') ||
+    localStorage.getItem('UserId') ||
+    localStorage.getItem('userId') ||
+    sessionStorage.getItem('user_id') ||
+    sessionStorage.getItem('UserId') ||
+    sessionStorage.getItem('userId')
+
+  if (directId && Number(directId) > 0) {
+    return Number(directId)
+  }
+
+  return 0
+}
+
+function BuildTaskApiUrl(params = {}) {
+  const UserId = GetLoggedInUserId()
+
+  if (UserId <= 0) {
+    throw new Error('No logged-in user found. Please sign in before creating a task.')
+  }
+
+  const Url = new URL(TaskApiUrl, window.location.origin)
+
+  Url.searchParams.set('UserId', UserId)
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      Url.searchParams.set(key, value)
+    }
+  })
+
+  return Url.toString()
+}
+
 async function ReadJsonResponse(Response) {
   const ResponseText = await Response.text()
 
@@ -50,9 +95,6 @@ async function ReadJsonResponse(Response) {
   }
 }
 
-// form validation
-// only Title and Type are required.
-// Date, Time, Location, and Description are optional but supported by the database.
 function ValidateTaskForm() {
   if (!Title.value.trim()) {
     return 'Please enter a task title.'
@@ -62,11 +104,12 @@ function ValidateTaskForm() {
     return 'Please select a task type.'
   }
 
+  if (GetLoggedInUserId() <= 0) {
+    return 'No logged-in user found. Please sign in before creating a task.'
+  }
+
   return ''
 }
-
-// database create: create new task
-// sends the task data to api_tasks.php using POST.
 
 async function CreateTask() {
   ErrorMessage.value = ''
@@ -79,7 +122,10 @@ async function CreateTask() {
     return
   }
 
+  const UserId = GetLoggedInUserId()
+
   const NewTask = {
+    UserId,
     Title: Title.value.trim(),
     Type: Type.value,
     Date: Date.value || null,
@@ -92,7 +138,7 @@ async function CreateTask() {
   IsSubmitting.value = true
 
   try {
-    const Response = await fetch(TaskApiUrl, {
+    const Response = await fetch(BuildTaskApiUrl(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -118,27 +164,24 @@ async function CreateTask() {
   }
 }
 
-// navigation: cancel and return to task list
 function CancelCreate() {
   Router.push('/task')
 }
 </script>
 
 <template>
-  <!-- main page wrapper: bootstrap light theme -->
   <main class="creator-page bg-light min-vh-100 py-4 py-lg-5">
     <div class="container">
-      <!-- heading mirrors the TaskEditor structure -->
       <section class="mx-auto mb-4 creator-width">
         <h1 class="display-6 fw-bold text-dark mb-1">Create Task</h1>
         <p class="text-secondary mb-0">Add a new task to your planner</p>
       </section>
 
-      <!-- bootstrap card with green success accent -->
-      <form class="card shadow-sm border-0 border-top border-success border-4 mx-auto creator-width"
-        @submit.prevent="CreateTask">
+      <form
+        class="card shadow-sm border-0 border-top border-success border-4 mx-auto creator-width"
+        @submit.prevent="CreateTask"
+      >
         <div class="card-body p-4 p-lg-5">
-          <!-- feedback messages -->
           <div v-if="ErrorMessage" class="alert alert-danger" role="alert">
             {{ ErrorMessage }}
           </div>
@@ -147,14 +190,18 @@ function CancelCreate() {
             {{ SuccessMessage }}
           </div>
 
-          <!-- title field -->
           <div class="mb-3">
             <label for="Title" class="form-label fw-semibold">Title</label>
-            <input id="Title" v-model="Title" type="text" class="form-control form-control-lg"
-              placeholder="Enter task title" required />
+            <input
+              id="Title"
+              v-model="Title"
+              type="text"
+              class="form-control form-control-lg"
+              placeholder="Enter task title"
+              required
+            />
           </div>
 
-          <!-- type field -->
           <div class="mb-3">
             <label for="Type" class="form-label fw-semibold">Type</label>
             <select id="Type" v-model="Type" class="form-select form-select-lg" required>
@@ -164,10 +211,12 @@ function CancelCreate() {
               <option value="Work">Work</option>
               <option value="Personal">Personal</option>
               <option value="Assessment">Assessment</option>
+              <option value="Development">Development</option>
+              <option value="Health">Health</option>
+              <option value="Reminder">Reminder</option>
             </select>
           </div>
 
-          <!-- date and time fields -->
           <div class="row g-3 mb-3">
             <div class="col-12 col-md-6">
               <label for="Date" class="form-label fw-semibold">Date</label>
@@ -180,21 +229,28 @@ function CancelCreate() {
             </div>
           </div>
 
-          <!-- location field -->
           <div class="mb-3">
             <label for="Location" class="form-label fw-semibold">Location</label>
-            <input id="Location" v-model="Location" type="text" class="form-control form-control-lg"
-              placeholder="Location" />
+            <input
+              id="Location"
+              v-model="Location"
+              type="text"
+              class="form-control form-control-lg"
+              placeholder="Location"
+            />
           </div>
 
-          <!-- description field -->
           <div class="mb-4">
             <label for="Description" class="form-label fw-semibold">Description</label>
-            <textarea id="Description" v-model="Description" class="form-control form-control-lg" rows="5"
-              placeholder="Task description"></textarea>
+            <textarea
+              id="Description"
+              v-model="Description"
+              class="form-control form-control-lg"
+              rows="5"
+              placeholder="Task description"
+            ></textarea>
           </div>
 
-          <!-- form actions -->
           <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
             <button type="button" class="btn btn-outline-warning btn-lg px-4" @click="CancelCreate">
               Cancel

@@ -5,41 +5,24 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json');
-
-// api_tasks.php
-// purpose:
-// - provide CRUD operations for the pdt_tasks mysql table.
-// - GET    -> read all tasks or read one task.
-// - POST   -> create a task.
-// - PUT    -> update a task.
-// - DELETE -> delete a task.
-
-header('Content-Type: application/json');
-
-// allow local vite development to call this php api.
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// browser sends OPTIONS before PUT/DELETE when using CORS.
-// this exits early so the real request can continue afterwards.
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
 // database connection
-// original mercury / swinburne feenix database.
-// comment out for local xampp testing.
+$conn = mysqli_connect(
+    'feenix-mariadb.swin.edu.au',
+    's105341089',
+    '080805',
+    's105341089_db'
+);
 
-$conn = mysqli_connect('feenix-mariadb.swin.edu.au', 's105341089', '080805', 's105341089_db');
-
-// local xampp database connection.
-//$host = "localhost";
-//$user = "root";
-//$password = "";
-//$database = "task"; 
-
-//$conn = mysqli_connect($host, $user, $password, $database);
+// local xampp connection if needed
+// $conn = mysqli_connect("localhost", "root", "", "task");
 
 if (!$conn) {
     echo json_encode([
@@ -51,19 +34,35 @@ if (!$conn) {
 
 mysqli_set_charset($conn, 'utf8');
 
-// table used by this api.
 $table = 'pdt_tasks';
-
-// request method and json body.
 $method = $_SERVER['REQUEST_METHOD'];
+
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!is_array($input)) {
     $input = [];
 }
 
-// helper: read a text field safely
-// trims the value and escapes it before placing it in sql.
+// task id from URL
+$TaskId = isset($_GET['TaskId']) ? (int)$_GET['TaskId'] : 0;
+
+// user id must come from logged-in frontend/session
+$UserId = 0;
+
+if (isset($_GET['UserId'])) {
+    $UserId = (int)$_GET['UserId'];
+} elseif (isset($input['UserId'])) {
+    $UserId = (int)$input['UserId'];
+}
+
+if ($UserId <= 0) {
+    echo json_encode([
+        'success' => false,
+        'error' => 'missing user id'
+    ]);
+    exit;
+}
+
 function ReadTextField($conn, $input, $field, $fallback = '') {
     if (!isset($input[$field]) || $input[$field] === null) {
         return $fallback;
@@ -72,9 +71,6 @@ function ReadTextField($conn, $input, $field, $fallback = '') {
     return mysqli_real_escape_string($conn, trim((string)$input[$field]));
 }
 
-// helper: convert date/time to sql-safe values
-// empty date/time should become NULL, not an empty string.
-// this avoids mysql errors with DATE and TIME columns.
 function ToSqlNullableValue($conn, $value) {
     if (!isset($value) || trim((string)$value) === '') {
         return 'NULL';
@@ -83,11 +79,10 @@ function ToSqlNullableValue($conn, $value) {
     return "'" . mysqli_real_escape_string($conn, trim((string)$value)) . "'";
 }
 
-// helper: convert mysql row to vue-friendly object
-// the frontend uses capitalised field names to match TaskEditor.
 function FormatTaskRow($row) {
     return [
         'Id' => (int)$row['task_id'],
+        'UserId' => (int)$row['user_id'],
         'Title' => $row['task_title'],
         'Type' => $row['task_type'],
         'Date' => $row['task_date'],
@@ -100,19 +95,17 @@ function FormatTaskRow($row) {
     ];
 }
 
-// task id from url
-// examples:
-// api_tasks.php
-// api_tasks.php?TaskId=3
-$TaskId = isset($_GET['TaskId']) ? (int)$_GET['TaskId'] : 0;
-
-
-// GET: read tasks
+// GET: read tasks for current user
 if ($method === 'GET') {
     if ($TaskId > 0) {
-        $sql = "SELECT * FROM `$table` WHERE task_id = $TaskId LIMIT 1";
+        $sql = "SELECT * FROM `$table`
+                WHERE task_id = $TaskId
+                AND user_id = $UserId
+                LIMIT 1";
     } else {
-        $sql = "SELECT * FROM `$table` ORDER BY task_completed ASC, task_date ASC, task_time ASC, task_id DESC";
+        $sql = "SELECT * FROM `$table`
+                WHERE user_id = $UserId
+                ORDER BY task_completed ASC, task_date ASC, task_time ASC, task_id DESC";
     }
 
     $result = mysqli_query($conn, $sql);
@@ -135,8 +128,7 @@ if ($method === 'GET') {
     exit;
 }
 
-
-// POST: create task
+// POST: create task for current user
 if ($method === 'POST') {
     $Title = ReadTextField($conn, $input, 'Title');
     $Type = ReadTextField($conn, $input, 'Type');
@@ -155,9 +147,9 @@ if ($method === 'POST') {
     }
 
     $sql = "INSERT INTO `$table`
-            (task_title, task_type, task_date, task_time, task_location, task_description, task_completed)
+            (user_id, task_title, task_type, task_date, task_time, task_location, task_description, task_completed)
             VALUES
-            ('$Title', '$Type', $Date, $Time, '$Location', '$Description', $Completed)";
+            ($UserId, '$Title', '$Type', $Date, $Time, '$Location', '$Description', $Completed)";
 
     if (mysqli_query($conn, $sql)) {
         echo json_encode([
@@ -174,7 +166,7 @@ if ($method === 'POST') {
     exit;
 }
 
-// PUT: update task
+// PUT: update only the current user's task
 if ($method === 'PUT') {
     if ($TaskId <= 0) {
         echo json_encode([
@@ -207,8 +199,10 @@ if ($method === 'PUT') {
                 task_time = $Time,
                 task_location = '$Location',
                 task_description = '$Description',
-                task_completed = $Completed
-            WHERE task_id = $TaskId";
+                task_completed = $Completed,
+                updated_at = NOW()
+            WHERE task_id = $TaskId
+            AND user_id = $UserId";
 
     if (mysqli_query($conn, $sql)) {
         echo json_encode([
@@ -225,8 +219,7 @@ if ($method === 'PUT') {
     exit;
 }
 
-
-// DELETE: delete task
+// DELETE: delete only the current user's task
 if ($method === 'DELETE') {
     if ($TaskId <= 0) {
         echo json_encode([
@@ -236,7 +229,9 @@ if ($method === 'DELETE') {
         exit;
     }
 
-    $sql = "DELETE FROM `$table` WHERE task_id = $TaskId";
+    $sql = "DELETE FROM `$table`
+            WHERE task_id = $TaskId
+            AND user_id = $UserId";
 
     if (mysqli_query($conn, $sql)) {
         echo json_encode([
@@ -253,7 +248,6 @@ if ($method === 'DELETE') {
     exit;
 }
 
-// fallback for unsupported methods.
 echo json_encode([
     'success' => false,
     'error' => 'unsupported request method'
