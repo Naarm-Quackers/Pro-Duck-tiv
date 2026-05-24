@@ -6,8 +6,85 @@ const route = useRoute()
 const router = useRouter()
 
 const err = ref('')
-const tasks = ref([])
 const showSelectTaskMessage = ref(false)
+const isSaving = ref(false)
+
+const TaskApiUrl = '/resources/api_tasks.php'
+
+function GetLoggedInUserId() {
+    const possibleKeys = [
+        'currentUser',
+        'loggedInUser',
+        'pdtUser',
+        'user',
+        'authUser',
+        'User'
+    ]
+
+    for (const key of possibleKeys) {
+        const value = localStorage.getItem(key) || sessionStorage.getItem(key)
+
+        if (!value) continue
+
+        try {
+            const parsed = JSON.parse(value)
+            const id = parsed.user_id || parsed.UserId || parsed.userId || parsed.id
+
+            if (id && Number(id) > 0) {
+                return Number(id)
+            }
+        } catch {
+            if (Number(value) > 0) {
+                return Number(value)
+            }
+        }
+    }
+
+    const directId =
+        localStorage.getItem('user_id') ||
+        localStorage.getItem('UserId') ||
+        localStorage.getItem('userId') ||
+        sessionStorage.getItem('user_id') ||
+        sessionStorage.getItem('UserId') ||
+        sessionStorage.getItem('userId')
+
+    if (directId && Number(directId) > 0) {
+        return Number(directId)
+    }
+
+    return 0
+}
+
+function BuildTaskApiUrl(params = {}) {
+    const UserId = GetLoggedInUserId()
+
+    if (UserId <= 0) {
+        throw new Error('No logged-in user found. Please sign in before editing tasks.')
+    }
+
+    const Url = new URL(TaskApiUrl, window.location.origin)
+    Url.searchParams.set('UserId', UserId)
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+            Url.searchParams.set(key, value)
+        }
+    })
+
+    return Url.toString()
+}
+
+async function ReadJsonResponse(Response) {
+    const ResponseText = await Response.text()
+
+    try {
+        return JSON.parse(ResponseText)
+    } catch {
+        throw new Error(
+            'The task API did not return JSON. Check that api_tasks.php is running and TaskApiUrl is correct.'
+        )
+    }
+}
 
 const emptyTask = {
     id: '',
@@ -28,37 +105,70 @@ const task = ref({
 })
 
 onMounted(() => {
-    tasks.value = JSON.parse(localStorage.getItem('tasks')) || []
-
-
-    // If Task Editor selected from navbar then 
+    const UserId = GetLoggedInUserId()
+    // If Task Editor selected from navbar then
     if (!route.params.id) {
         showSelectTaskMessage.value = true
         return
     }
 
-    const existingTask = tasks.value.find(t => t.id == route.params.id)
-    if (existingTask) {
-        task.value = { ...emptyTask, ...existingTask }
-    } else {
-        err.value = 'Task not found'
-    }
+    loadTask()
 })
 
-function saveTask() {
-    const index = tasks.value.findIndex(t => t.id == task.value.id)
-    if (index !== -1) {
-        const completed = task.value.status === 'Complete' || task.value.status === 'Finished'
+async function loadTask() {
+    err.value = ''
 
-        tasks.value[index] = {
-            ...task.value,
-            completed,
-            completedDate: completed ? (task.value.completedDate || new Date().toLocaleString()) : '',
+    try {
+        const Response = await fetch(BuildTaskApiUrl({ TaskId: route.params.id }))
+        const Data = await ReadJsonResponse(Response)
+
+        if (!Array.isArray(Data) || Data.length === 0) {
+            err.value = 'Task not found'
+            return
         }
-        localStorage.setItem('tasks', JSON.stringify(tasks.value))
+
+        task.value = { ...emptyTask, ...Data[0] }
+    } catch (error) {
+        err.value = error instanceof Error ? error.message : 'Could not load task'
+    }
+}
+
+async function saveTask() {
+    err.value = ''
+
+    if (!task.value.Title || !task.value.Type) {
+        err.value = 'Title and type are required'
+        return
+    }
+
+    isSaving.value = true
+
+    const payload = {
+        ...task.value,
+        UserId: GetLoggedInUserId(),
+        Completed: task.value.Completed === true || task.value.status === 'Complete'
+    }
+
+    try {
+        const Response = await fetch(BuildTaskApiUrl({ TaskId: task.value.Id || route.params.id }), {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+
+        const Data = await ReadJsonResponse(Response)
+
+        if (!Data.success) {
+            throw new Error(Data.error || 'Could not update task')
+        }
+
         router.push('/task')
-    } else {
-        err.value = 'Could not update task'
+    } catch (error) {
+        err.value = error instanceof Error ? error.message : 'Could not update task'
+    } finally {
+        isSaving.value = false
     }
 }
 </script>
@@ -82,12 +192,12 @@ function saveTask() {
 
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
-                            <input v-model="task.title" type="text" id="title" class="form-control" placeholder="Task title" required />
+                            <input v-model="task.Title" type="text" id="title" class="form-control" placeholder="Task title" required />
                         </div>
 
                         <div class="mb-3">
                             <label for="type" class="form-label">Type</label>
-                            <select v-model="task.type" id="type" class="form-select" required>
+                            <select v-model="task.Type" id="type" class="form-select" required>
                                 <option value="Task">Task</option>
                                 <option value="Meeting">Meeting</option>
                                 <option value="Deadline">Deadline</option>
@@ -99,44 +209,38 @@ function saveTask() {
                         <div class="row mb-3">
                             <div class="col">
                                 <label for="date" class="form-label">Date</label>
-                                <input v-model="task.date" type="date" id="date" class="form-control" />
+                                <input v-model="task.Date" type="date" id="date" class="form-control" />
                             </div>
                             <div class="col">
                                 <label for="time" class="form-label">Time</label>
-                                <input v-model="task.time" type="time" id="time" class="form-control" />
+                                <input v-model="task.Time" type="time" id="time" class="form-control" />
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="location" class="form-label">Location</label>
-                            <input v-model="task.location" type="text" id="location" class="form-control" placeholder="Location" />
+                            <input v-model="task.Location" type="text" id="location" class="form-control" placeholder="Location" />
                         </div>
 
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
-                            <textarea v-model="task.description" id="description" class="form-control" rows="4" placeholder="Task description"></textarea>
+                            <textarea v-model="task.Description" id="description" class="form-control" rows="4" placeholder="Task description"></textarea>
                         </div>
 
-                        <div class="row mb-4">
-                            <div class="col">
-                                <label for="priority" class="form-label">Priority</label>
-                                <select v-model="task.priority" id="priority" class="form-select">
-                                    <option value="Low">Low</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="High">High</option>
-                                </select>
-                            </div>
-                            <div class="col">
-                                <label for="status" class="form-label">Status</label>
-                                <select v-model="task.status" id="status" class="form-select">
-                                    <option value="Active">Active</option>
-                                    <option value="Complete">Complete</option>
-                                </select>
-                            </div>
+                        <div class="mb-4 form-check">
+                            <input
+                                id="status"
+                                v-model="task.Completed"
+                                class="form-check-input"
+                                type="checkbox"
+                            />
+                            <label for="status" class="form-check-label">Mark as complete</label>
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-outline-success">Save Changes</button>
+                            <button type="submit" class="btn btn-outline-success" :disabled="isSaving">
+                                {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                            </button>
                             <button type="button" class="btn btn-outline-warning" @click="router.push('/task')">Cancel</button>
                         </div>
 

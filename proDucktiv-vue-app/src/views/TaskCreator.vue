@@ -5,11 +5,11 @@ import { useRouter } from 'vue-router'
 const Router = useRouter()
 
 const TaskApiUrl =
-  import.meta.env.VITE_TASK_API_URL ||
-  'http://localhost/Pro-Duck-tiv/proDucktiv-vue-app/resources/api_tasks.php'
+  '/resources/api_tasks.php'
 
 const Title = ref('')
 const Type = ref('')
+const Priority = ref('Medium')
 const Date = ref('')
 const Time = ref('')
 const Location = ref('')

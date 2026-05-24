@@ -4,9 +4,7 @@ import { useRouter } from 'vue-router'
 
 const Router = useRouter()
 
-const TaskApiUrl =
-  import.meta.env.VITE_TASK_API_URL ||
-  'http://localhost/Pro-Duck-tiv/proDucktiv-vue-app/resources/api_tasks.php'
+const TaskApiUrl = '/resources/api_tasks.php'
 
 const Search = ref('')
 const CurrentTab = ref('Active')
@@ -464,13 +462,15 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="d-flex flex-wrap gap-2 pt-2">
-                <button type="button" class="btn btn-outline-success" @click="EditTask(Task.Id)">
-                  Edit
+                
+
+                <div class="d-flex flex-wrap gap-2 pt-2">
+                <button type="button" class="btn btn-outline-success" @click="ToggleTask(Task)">
+                  {{ Number(Task.Completed) === 1 || Task.Completed === true ? 'Mark Active' : 'Mark Done' }}
                 </button>
 
-                <button type="button" class="btn btn-outline-warning" @click="ToggleTask(Task)">
-                  {{ Number(Task.Completed) === 1 || Task.Completed === true ? 'Mark Active' : 'Mark Done' }}
+                <button type="button" class="btn btn-outline-warning" @click="EditTask(Task.Id)">
+                  Edit
                 </button>
 
                 <button type="button" class="btn btn-outline-danger" @click="DeleteTask(Task.Id)">
