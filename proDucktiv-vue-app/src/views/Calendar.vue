@@ -558,7 +558,7 @@ export default {
         formatDate(day) {
             const formattedDate = day.toLocaleDateString("en-au").replace(/\//g, "-");
             return formattedDate
-        }
+        },
         // check for birthday ---> needs to be reformated to match user database
         bDayCheck(day) {
             const formattedDate = formatDate(day)
