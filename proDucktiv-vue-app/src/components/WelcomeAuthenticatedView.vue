@@ -2,17 +2,27 @@
 import { ref, computed, onMounted } from 'vue'
 
 const emit = defineEmits(['toggle-auth'])
+const props = defineProps({
+	username: {
+		type: String,
+		default: 'User',
+	},
+	userId: {
+		type: [Number, String],
+		default: null,
+	},
+})
 
-// Dashboard placeholder data
-const username = ref('User')
-const allTasks = ref([])
 
-function getLocalDateString(date = new Date()) {
-	const year = date.getFullYear()
-	const month = String(date.getMonth() + 1).padStart(2, '0')
-	const day = String(date.getDate()).padStart(2, '0')
-	return `${year}-${month}-${day}`
-}
+// API definitions
+const MOODS_API = '/resources/api_moods.php'
+const TASKS_API = '/resources/api_tasks.php'
+//const JOURNAL_API = ''
+
+
+// -----------------------------
+// Users database setup
+// -----------------------------
 
 // Recent journal entries
 const recentJournal = ref([
@@ -24,30 +34,19 @@ const recentJournal = ref([
 // Mood database setup
 // -----------------------------
 
-const MOODS_API = '/resources/api_moods.php'
+const currentUserId = computed(() => {
+	const parsed = Number(props.userId)
+	return Number.isFinite(parsed) ? parsed : null
+})
 
-// Temporary testing user.
-// Replace this later with the logged-in user's real user_id.
-const currentUserId = ref(2)
-
-// Temporary testind date.
-const testMoodDate = ref('2026-05-24')
-
+// Mood initial variables
 const moodUp = ref(0)
 const moodDown = ref(0)
 const userMood = ref(null)
 const todaysMood = ref(null)
-const moodRows = ref([])
-const moodsLoading = ref(false)
 const moodsError = ref('')
 
-const moodColumns = computed(() => {
-	if (!moodRows.value.length) return []
-	return Object.keys(moodRows.value[0])
-})
-
 async function fetchMoods() {
-	moodsLoading.value = true
 	moodsError.value = ''
 
 	try {
@@ -60,10 +59,7 @@ async function fetchMoods() {
 		const data = await response.json()
 		const rows = Array.isArray(data) ? data : []
 
-		moodRows.value = rows
-
-		//const today = getLocalDateString()
-		const today = testMoodDate.value
+		const today = getLocalDateString()
 
 		const todaysRows = rows.filter((row) => row.mood_date === today)
 
@@ -83,26 +79,16 @@ async function fetchMoods() {
 		}
 	} catch (error) {
 		moodsError.value = error instanceof Error ? error.message : 'Failed to load moods'
-		moodRows.value = []
 		moodUp.value = 0
 		moodDown.value = 0
 		userMood.value = null
 		todaysMood.value = null
-	} finally {
-		moodsLoading.value = false
 	}
 }
 
 // Mood voting logic using database
 const onSetMood = async (mood) => {
-	//const today = getLocalDateString()
-	const today = testMoodDate.value
-
-	if (todaysMood.value) {
-		alert('You can only vote once per day.')
-		return
-	}
-
+	const today = getLocalDateString()
 	try {
 		const response = await fetch(MOODS_API, {
 			method: 'POST',
@@ -134,6 +120,92 @@ const onSetMood = async (mood) => {
 // Task calculations
 // -----------------------------
 
+// Task data
+const allTasks = ref([])
+const tasksError = ref('')
+
+function normalizeTask(task) {
+	const isCompleted =
+		task.Completed === true ||
+		Number(task.Completed) === 1 ||
+		task.status === 'Complete' ||
+		task.completed === true
+
+	return {
+		...task,
+		id: task.Id,
+		title: task.Title,
+		type: task.Type,
+		date: task.Date,
+		time: task.Time,
+		location: task.Location,
+		description: task.Description,
+		completed: isCompleted,
+		status: isCompleted ? 'Complete' : 'Active',
+	}
+}
+
+async function fetchTasks() {
+	tasksError.value = ''
+
+	try {
+		if (!currentUserId.value) {
+			allTasks.value = []
+			return
+		}
+
+		const url = new URL(TASKS_API, window.location.origin)
+		url.searchParams.set('UserId', Number(currentUserId.value))
+
+		const response = await fetch(url.toString())
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`)
+		}
+
+		const data = await response.json()
+		const rows = Array.isArray(data) ? data : []
+
+		allTasks.value = rows.map((task) => normalizeTask(task))
+	} catch (error) {
+		tasksError.value = error instanceof Error ? error.message : 'Failed to load tasks'
+		allTasks.value = []
+	}
+}
+
+function getLocalDateString(date = new Date()) {
+	const year = date.getFullYear()
+	const month = String(date.getMonth() + 1).padStart(2, '0')
+	const day = String(date.getDate()).padStart(2, '0')
+	return `${year}-${month}-${day}`
+}
+
+function isTaskComplete(task) {
+	const isCompleted =
+		task.Completed === true ||
+		task.status === 'Complete'
+	return isCompleted
+}
+
+function getDueDateTime(task) {
+	if (!task.date) return null
+
+	const taskTime = task.time || '23:59'
+	const due = new Date(`${task.date}T${taskTime}`)
+
+	if (Number.isNaN(due.getTime())) return null
+
+	return due
+}
+
+function getHoursUntilDue(task) {
+	const due = getDueDateTime(task)
+
+	if (!due) return null
+
+	return Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60))
+}
+
 const todaysTasks = computed(() => {
 	const today = getLocalDateString()
 	
@@ -141,24 +213,29 @@ const todaysTasks = computed(() => {
 })
 
 const completedTasks = computed(() => {
-	return todaysTasks.value.filter((t) => t.done).length
+	return todaysTasks.value.filter((task) => isTaskComplete(task)).length
 })
 
 const activeTasks = computed(() => {
-	return allTasks.value.filter((t) => !t.done).length
+	return allTasks.value.filter((task) => !isTaskComplete(task)).length
 })
 
 const overdueTasks = computed(() => {
-	const today = getLocalDateString()
-	return allTasks.value.filter((t) => !t.done && t.date && t.date < today).length
+	return allTasks.value.filter((task) => {
+		const hoursLeft = getHoursUntilDue(task)
+
+		return !isTaskComplete(task) && hoursLeft !== null && hoursLeft < 0
+	}).length
 })
 
 const upcomingDeadlines = computed(() => {
-	const today = getLocalDateString()
-
 	return allTasks.value
-		.filter((t) => !t.done && t.date && t.date >= today)
-		.sort((a, b) => a.date.localeCompare(b.date))
+		.filter((task) => {
+			const hoursLeft = getHoursUntilDue(task)
+
+			return !isTaskComplete(task) && hoursLeft !== null && hoursLeft >= 0
+		})
+		.sort((a, b) => getDueDateTime(a).getTime() - getDueDateTime(b).getTime())
 		.slice(0, 5)
 })
 
@@ -166,27 +243,12 @@ const upcomingDeadlines = computed(() => {
 const productivityScore = computed(() => {
 	if (todaysTasks.value.length === 0) return 0
 
-	const done = todaysTasks.value.filter((t) => t.done).length
+	const done = todaysTasks.value.filter((task) => isTaskComplete(task)).length
 	return Math.round((done / todaysTasks.value.length) * 100)
 })
 
 onMounted(() => {
-	const storedTasks = JSON.parse(localStorage.getItem('tasks') || 'null')
-
-	// If you have a tasksData variable elsewhere, keep using it.
-	// Otherwise, this safely falls back to an empty array.
-	const sourceTasks =
-		Array.isArray(storedTasks) && storedTasks.length > 0
-			? storedTasks
-			: typeof tasksData !== 'undefined'
-				? tasksData
-				: []
-
-	allTasks.value = sourceTasks.map((task) => ({
-		...task,
-		done: task.done ?? task.completed ?? false,
-	}))
-
+	fetchTasks()
 	fetchMoods()
 })
 </script>
@@ -195,7 +257,7 @@ onMounted(() => {
 	<div class="row">
 		<div class="d-flex justify-content-between align-items-start mb-3">
 			<div>
-				<h4 class="mb-0 fw-semibold">Hello, {{ username }}!</h4>
+				<h4 class="mb-0 fw-semibold">Hello, {{ props.username }}!</h4>
 			</div>
 
 			<div class="d-flex gap-2">
@@ -230,11 +292,11 @@ onMounted(() => {
 
 								<div class="d-flex justify-content-between mt-1">
 									<small class="text-muted">
-										{{ todaysTasks.filter(t => t.done).length }} completed today
+										{{ completedTasks }} completed today
 									</small>
 
 									<small class="text-muted">
-										{{ todaysTasks.filter(t => !t.done).length }} remaining
+										{{ todaysTasks.length - completedTasks }} remaining
 									</small>
 								</div>
 							</div>
@@ -295,6 +357,12 @@ onMounted(() => {
 		</div>
 
 		<div class="row g-3 mb-3">
+			<div v-if="tasksError" class="col-12">
+				<div class="alert alert-danger py-2 mb-0" role="alert">
+					Task database error: {{ tasksError }}
+				</div>
+			</div>
+
 			<div class="col-6 col-md-4">
 				<div class="card border-0 shadow-sm">
 					<div class="card-body">
@@ -354,59 +422,9 @@ onMounted(() => {
 						</div>
 
 						<small class="text-muted">
-							Loaded from pdt_moods table
+							 {{ moodUp + moodDown }} users voted today
 						</small>
 					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="card border-0 shadow-sm mb-3">
-			<div class="card-body">
-				<div class="d-flex justify-content-between align-items-center mb-3">
-					<h6 class="mb-0">
-						<i class="bi bi-table me-2"></i>
-						PDT moods testing
-					</h6>
-
-					<button class="btn btn-outline-secondary btn-sm" @click="fetchMoods">
-						Refresh
-					</button>
-				</div>
-
-				<p v-if="moodsLoading" class="text-muted mb-0">
-					Loading moods...
-				</p>
-
-				<p v-else-if="moodsError" class="text-danger mb-0">
-					Failed to load moods: {{ moodsError }}
-				</p>
-
-				<p v-else-if="moodRows.length === 0" class="text-muted mb-0">
-					No mood rows returned.
-				</p>
-
-				<div v-else class="table-responsive">
-					<table class="table table-sm table-striped align-middle mb-0">
-						<thead>
-							<tr>
-								<th v-for="column in moodColumns" :key="column">
-									{{ column }}
-								</th>
-							</tr>
-						</thead>
-
-						<tbody>
-							<tr v-for="(row, rowIndex) in moodRows" :key="rowIndex">
-								<td
-									v-for="column in moodColumns"
-									:key="`${rowIndex}-${column}`"
-								>
-									{{ row[column] }}
-								</td>
-							</tr>
-						</tbody>
-					</table>
 				</div>
 			</div>
 		</div>
@@ -442,22 +460,9 @@ onMounted(() => {
 
 								<span
 									class="badge ms-2"
-									:class="(task.done ?? task.completed) ? 'bg-success' : 'bg-secondary'"
+									:class="isTaskComplete(task) ? 'bg-success' : 'bg-secondary'"
 								>
-									{{ (task.done ?? task.completed) ? 'Done' : 'Active' }}
-								</span>
-
-								<span
-									class="badge ms-2"
-									:class="(task.priority || '').toLowerCase() === 'high'
-										? 'bg-danger'
-										: (task.priority || '').toLowerCase() === 'medium'
-											? 'bg-warning text-dark'
-											: (task.priority || '').toLowerCase() === 'low'
-												? 'bg-info text-dark'
-												: 'bg-secondary'"
-								>
-									{{ task.priority ? `${task.priority} Priority` : 'No Priority' }}
+									{{ isTaskComplete(task) ? 'Done' : 'Active' }}
 								</span>
 							</li>
 						</ul>

@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-const emit = defineEmits(['toggle-auth'])
 
 // Stats (replace with API data later)
 const productivityIncrease = ref('85%')
@@ -26,7 +25,9 @@ const progressDashboard = 'https://picsum.photos/seed/progressdashboard/1200/600
 
 		<div class="row">
 			<div class="col d-flex justify-content-center gap-2">
-				<button type="button" class="btn btn-outline-success" @click="emit('toggle-auth')">Sign In</button>
+				<router-link to="/sign-in" class="btn btn-outline-success">
+					Sign In
+				</router-link>
 				<router-link to="/about">
 					<button class="btn btn-outline-warning">Learn More</button>
 				</router-link>
