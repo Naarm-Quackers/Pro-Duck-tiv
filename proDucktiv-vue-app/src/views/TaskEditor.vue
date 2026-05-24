@@ -94,7 +94,6 @@ const emptyTask = {
     time: '',
     location: '',
     description: '',
-    priority: 'Medium',
     status: 'Active',
     creationDate: '',
     completedDate: ''

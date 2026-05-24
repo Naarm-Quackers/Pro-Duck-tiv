@@ -9,7 +9,6 @@ const TaskApiUrl =
 
 const Title = ref('')
 const Type = ref('')
-const Priority = ref('Medium')
 const Date = ref('')
 const Time = ref('')
 const Location = ref('')
