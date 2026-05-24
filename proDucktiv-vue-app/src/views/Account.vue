@@ -1,6 +1,7 @@
 <template>
-    <div class="d-flex justify-content-center align-items-start py-5" style="min-height:calc(100vh - 65px);">
-        <div style="width:100%;max-width:600px;">
+    <div class="d-flex justify-content-center align-items-start py-4 py-md-5 px-3"
+        style="min-height:calc(100vh - 65px);">
+        <div class="w-100" style="max-width:600px;">
 
             <h1 class="text-h3 font-weight-bold">Account Page</h1>
 
@@ -12,39 +13,37 @@
             <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
             <div v-else-if="user" class="card">
-                <div class="card-body p-4">
-                    <table class="table table-borderless mb-0 fs-6">
-                        <tbody>
-                            <tr>
-                                <th class="text-muted fw-normal" style="width:180px;">First name</th>
-                                <td>
-                                    <input v-if="editing" v-model="editForm.user_first_name"
-                                        class="form-control" />
-                                    <span v-else>{{ user.user_first_name }}</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th class="text-muted fw-normal">Last name</th>
-                                <td>
-                                    <input v-if="editing" v-model="editForm.user_last_name"
-                                        class="form-control" />
-                                    <span v-else>{{ user.user_last_name }}</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th class="text-muted fw-normal">Username</th>
-                                <td>{{ user.user_name }}</td>
-                            </tr>
-                            <tr>
-                                <th class="text-muted fw-normal">Date of birth</th>
-                                <td>
-                                    <input v-if="editing" v-model="editForm.user_date_of_birth"
-                                        type="date" class="form-control" />
-                                    <span v-else>{{ formatDate(user.user_date_of_birth) }}</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card-body p-3 p-md-4">
+
+                    <div class="row align-items-center mb-3">
+                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">First name</div>
+                        <div class="col-12 col-sm-8">
+                            <input v-if="editing" v-model="editForm.user_first_name" class="form-control" />
+                            <span v-else>{{ user.user_first_name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row align-items-center mb-3">
+                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Last name</div>
+                        <div class="col-12 col-sm-8">
+                            <input v-if="editing" v-model="editForm.user_last_name" class="form-control" />
+                            <span v-else>{{ user.user_last_name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row align-items-center mb-3">
+                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Username</div>
+                        <div class="col-12 col-sm-8">{{ user.user_name }}</div>
+                    </div>
+
+                    <div class="row align-items-center mb-3">
+                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Date of birth</div>
+                        <div class="col-12 col-sm-8">
+                            <input v-if="editing" v-model="editForm.user_date_of_birth"
+                                type="date" class="form-control" />
+                            <span v-else>{{ formatDate(user.user_date_of_birth) }}</span>
+                        </div>
+                    </div>
 
                     <div class="d-flex gap-2 mt-4">
                         <template v-if="editing">

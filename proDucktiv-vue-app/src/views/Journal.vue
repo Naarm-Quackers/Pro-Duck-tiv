@@ -1,12 +1,32 @@
 <template>
-    <div class="d-flex overflow-hidden" style="height:calc(100vh - 65px);">
+    <div class="d-flex flex-column flex-md-row overflow-hidden" style="height:calc(100vh - 65px);">
 
-        <!-- Sidebar -->
-        <div class="d-flex flex-column border-end bg-light" style="width:240px;min-width:240px;">
+        <!-- Mobile sidebar toggle -->
+        <div class="d-md-none border-bottom bg-light px-3 py-2 flex-shrink-0">
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="offcanvas"
+                data-bs-target="#journalSidebar">
+                <i class="bi bi-journals me-1"></i> Journals
+            </button>
+        </div>
 
-            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+        <!-- Sidebar (offcanvas on mobile, inline on desktop) -->
+        <div id="journalSidebar"
+            class="offcanvas offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0"
+            style="width:240px;">
+
+            <div class="offcanvas-header d-md-none border-bottom">
+                <span class="fw-bold offcanvas-title">Journals</span>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            </div>
+
+            <div class="d-none d-md-flex justify-content-between align-items-center p-3 border-bottom">
                 <span class="fw-bold">Journals</span>
                 <button class="btn btn-sm btn-outline-success" @click="openNewJournal">+ New</button>
+            </div>
+
+            <div class="d-md-none px-3 py-2 border-bottom">
+                <button class="btn btn-sm btn-outline-success w-100"
+                    data-bs-dismiss="offcanvas" @click="openNewJournal">+ New Journal</button>
             </div>
 
             <div class="overflow-y-auto flex-grow-1">
@@ -15,7 +35,7 @@
 
                 <div v-for="j in journals" :key="j.journal_id" class="p-3 border-bottom"
                     :class="activeJournal?.journal_id === j.journal_id ? 'bg-primary text-white' : ''"
-                    style="cursor:pointer;" @click="loadJournal(j)">
+                    style="cursor:pointer;" data-bs-dismiss="offcanvas" @click="loadJournal(j)">
                     <div class="small fw-medium text-truncate">{{ j.journal_name }}</div>
                     <div class="d-flex align-items-center gap-1 mt-1">
                         <span class="small"
@@ -48,9 +68,10 @@
 
                 <!-- Toolbar -->
                 <div class="d-flex flex-column border-bottom bg-white flex-shrink-0">
-                    <div class="d-flex align-items-center gap-2 p-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2 p-2">
                         <input v-model="form.journal_name" class="form-control form-control-sm"
-                            placeholder="Journal name" maxlength="120" @input="markDirty" />
+                            placeholder="Journal name" maxlength="120" style="min-width:120px;flex:1;"
+                            @input="markDirty" />
                         <input v-model="form.journal_date" type="date" class="form-control form-control-sm"
                             style="width:160px;" @change="markDirty" />
                         <span class="badge text-bg-secondary text-nowrap">
