@@ -1,29 +1,138 @@
+<script setup>
+import LogoDark from "../assets/images/DarkLogo.svg";
+import LogoLight from "../assets/images/LightLogo.svg";
+</script>
 <template>
-    <div class="container">
+    <div class="container-fluid">
         <div class="row text-center">
-            <nav>
-                <router-link to="/">Welcome</router-link>
-                <span> | </span>
-                <router-link to="/about">About</router-link>
-                <span> | </span>
-                <router-link to="/sign-in">Sign In</router-link>
-                <span> | </span>
-                <router-link to="/registration">Registration</router-link>
-                <span> | </span>
-                <router-link to="/calendar">Calendar</router-link>
-                <span> | </span>
-                <router-link to="/account">Account</router-link>
-                <span> | </span>
-                <router-link to="/task">Task</router-link>
-                <span> | </span>
-                <router-link to="/task-creator">Task Creator</router-link>
-                <span> | </span>
-                <router-link to="/task-editor">Task Editor</router-link>
-                <span> | </span>
-                <router-link to="/journal">Journal</router-link>
-
+            <nav
+                class="navbar navbar-light mb-0 bg-light mb-0 justify-content-evenly"
+            >
+                <p class="px-3">
+                    <img
+                        @click="toggleBool('isDarkMode')"
+                        :src="isDarkMode ? LogoDark : LogoLight"
+                        alt="ProDucktiv Logo"
+                        width="80px"
+                        height="80px"
+                        class="rounded-4"
+                    />
+                </p>
+                <router-link
+                    to="/"
+                    class="navbar-brand menu-element py-3 px-1 rounded-4 fw-bold"
+                    >proDucktiv</router-link
+                >
+                <router-link
+                    to="/task"
+                    class="nav-link menu-element py-3 px-1 rounded-4 fw-semibold"
+                    >Tasks</router-link
+                >
+                <router-link
+                    to="/journal"
+                    class="nav-link menu-element py-3 px-1 rounded-4 fw-semibold"
+                    >Journal</router-link
+                >
+                <router-link
+                    to="/calendar"
+                    class="nav-link menu-element py-3 px-1 rounded-4 fw-semibold"
+                    >Calendar</router-link
+                >
+                <button
+                    :class="
+                        isMenuOpen
+                            ? 'navbar-toggler menu-element bg-success'
+                            : 'navbar-toggler menu-element'
+                    "
+                    type="button"
+                    @click="isMenuOpen = !isMenuOpen"
+                    aria-label="Toggle navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div
+                    class="collapse navbar-collapse"
+                    :class="{ show: isMenuOpen }"
+                >
+                    <router-link
+                        to="/"
+                        class="nav-link active menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >Welcome</router-link
+                    >
+                    <router-link
+                        to="/about"
+                        class="nav-link menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >About</router-link
+                    >
+                    <router-link
+                        to="/sign-in"
+                        class="nav-link menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >Sign In</router-link
+                    >
+                    <router-link
+                        to="/registration"
+                        class="nav-link menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >Registration</router-link
+                    >
+                    <router-link
+                        to="/account"
+                        class="nav-link menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >Account</router-link
+                    >
+                    <router-link
+                        to="/task-creator"
+                        class="nav-link menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >Task Creator</router-link
+                    >
+                    <router-link
+                        to="/task-editor"
+                        class="nav-link menu-element py-3 rounded-4 fw-semibold"
+                        @click="toggleBool('isMenuOpen')"
+                        >Task Editor</router-link
+                    >
+                </div>
             </nav>
-            <hr>
+            <hr />
         </div>
-  </div>
+    </div>
 </template>
+<script>
+export default {
+    data() {
+        return {
+            isDarkMode: false,
+            isMenuOpen: false,
+        };
+    },
+    methods: {
+        toggleBool(bool) {
+            this[bool] = !this[bool];
+        },
+    },
+};
+</script>
+<style>
+.menu-element:hover {
+    background-color: var(--bs-success);
+    background-image: var(--bs-gradient);
+    color: black;
+    transition: ease 0.5s;
+}
+
+.nav-collapse.show {
+    border-top: 1px solid #dee2e6;
+    margin-top: 0.5pt;
+    padding-top: 0.5pt;
+    transition: ease 0.5s;
+}
+
+.navbar-collapse.show .nav-link {
+    text-align: center;
+}
+</style>
