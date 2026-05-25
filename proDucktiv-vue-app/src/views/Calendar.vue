@@ -37,7 +37,7 @@
             <div class="col text-center">
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="prevDay">
-                    < </button>
+                    &lt; </button>
             </div>
             <div class="col text-center">
                 <h3>{{ selectedDate.toDateString() }}</h3>
@@ -45,7 +45,7 @@
             <div class="col text-center">
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="nextDay">
-                    >
+                    &gt;
                 </button>
             </div>
         </div>
@@ -53,7 +53,7 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th scope="col" class="col text-center bg-success bg-opacity-75">
+                        <th scope="col" class="col text-center bg-success">
                             <h4>
                                 {{
                                     selectedDate
@@ -68,29 +68,30 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="col text-center bg-success bg-opacity-50">
+                        <td class="col text-center day-cell bg-success-subtle">
                             <div class="card bday-hover " style="width: 100%" v-if="bDayCheck(selectedDate)">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
-                                        Happy Birthday &#x1F381
+                                        Happy Birthday &#x1F381;
                                     </h5>
-                                    <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
+                                    <p class="card-text">Don't forget to celebrate &#x1F382; &#x1F389;</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-for="task in getSelectedDayTaskData()">
+                            <div class="card task-hover" style="width: 100%" v-for="task in getSelectedDayTaskData()"
+                                :key="task.Id">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
-                                        {{ task.task_name }}
+                                        {{ task.Title }}
                                     </h5>
-                                    <p class="card-text">{{ task.task_description }}</p>
-                                    <p class="card-text">Due: {{ task.task_time }}</p>
+                                    <p class="card-text">{{ task.Description }}</p>
+                                    <p class="card-text">Due: {{ task.Time }}</p>
                                 </div>
                             </div>
                             <div class="card task-hover" style="width: 100%"
-                                v-for="journal in getSelectedDayJournalData()">
+                                v-for="journal in getSelectedDayJournalData()" :key="journal.journal_id">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold">
-                                        {{ journal.journal_title }}
+                                        {{ journal.journal_name }}
                                     </h5>
                                 </div>
                             </div>
@@ -109,10 +110,10 @@
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="prevWeek">
-                    << </button>
-                        <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                            @click="prevDay">
-                            < </button>
+                    &lt;&lt; </button>
+                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
+                    @click="prevDay">
+                    &lt; </button>
             </div>
             <div class="col text-center">
                 <h3>{{ selectedDate.toDateString() }}</h3>
@@ -120,11 +121,11 @@
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="nextDay">
-                    >
+                    &gt;
                 </button>
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="nextWeek">
-                    >>
+                    &gt;&gt;
                 </button>
             </div>
         </div>
@@ -148,30 +149,31 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td v-for="day in getWeekArray()" @click="selectedDate = day.date" :class="day.isSelected ? 'bg-success bg-opacity-50' : 'green-hover'
+                        <td v-for="day in getWeekArray()" @click="selectedDate = day.date" :class="day.isSelected ? 'bg-success-subtle day-cell' : 'green-hover day-cell'
                             ">
                             <div class="card bday-hover" style="width: 100%" v-if="bDayCheck(day.date)">
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
-                                        Happy Birthday &#x1F381
+                                        Happy Birthday &#x1F381;
                                     </h6>
-                                    <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
+                                    <p class="card-text">Don't forget to celebrate &#x1F382; &#x1F389;</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-for="task in day.tasks">
+                            <div class="card task-hover" style="width: 100%" v-for="task in day.tasks" :key="task.Id">
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
-                                        Tasks for Today
+                                        {{ task.Title }}
                                     </h6>
-                                    <p class="card-text">task description</p>
+                                    <p class="card-text">{{ task.Description }}</p>
+                                    <p class="card-text">Due: {{ task.Time }}</p>
                                 </div>
                             </div>
-                            <div class="card task-hover" style="width: 100%" v-for="journal in day.journals">
+                            <div class="card task-hover" style="width: 100%" v-for="journal in day.journals"
+                                :key="journal.journal_id">
                                 <div class="card-body p-1">
                                     <h6 class="card-title fw-bold">
-                                        Todays Journal
+                                        {{ journal.journal_name }}
                                     </h6>
-                                    <p class="card-text">Journal Entry</p>
                                 </div>
                             </div>
                         </td>
@@ -189,13 +191,13 @@
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="prevMonth">
-                    <<< </button>
-                        <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                            @click="prevWeek">
-                            << </button>
-                                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                                    @click="prevDay">
-                                    < </button>
+                    &lt;&lt;&lt; </button>
+                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
+                    @click="prevWeek">
+                    &lt;&lt; </button>
+                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
+                    @click="prevDay">
+                    &lt; </button>
             </div>
             <div class="col text-center">
                 <h3>{{ getStringDate }}</h3>
@@ -203,15 +205,15 @@
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="nextDay">
-                    >
+                    &gt;
                 </button>
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="nextWeek">
-                    >>
+                    &gt;&gt;
                 </button>
                 <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
                     @click="nextMonth">
-                    >>>
+                    &gt;&gt;&gt;
                 </button>
             </div>
         </div>
@@ -227,17 +229,17 @@
                         <th scope="col" v-for="(dayName, dayNameIndex) in monthData.dayName" :class="(selectedDate.getDay() + 6) % 7 === dayNameIndex
                             ? 'bg-success bg-opacity-75'
                             : 'bg-success bg-opacity-25'
-                            ">
+                            " :key="dayNameIndex">
                             {{ dayName }}
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(week, wi) in getPaddedMonthArray()">
+                    <tr v-for="(week, wi) in getPaddedMonthArray()" :key="wi">
                         <td v-for="(day, di) in week" :class="day?.isSelected
-                            ? 'bg-success bg-opacity-50 month-calendar-body'
+                            ? 'bg-success-subtle month-calendar-body'
                             : 'day-cell green-hover'
-                            " @click="selectDateMonth(day)">
+                            " @click="selectDateMonth(day)" :key="di">
                             <h5 v-if="day != null" class="text-center">
                                 {{ day?.date.getDate() }}
                                 <hr>
@@ -246,21 +248,23 @@
                                 <div class="card bday-hover" style="width: 100%" v-if="bDayCheck(day.date)">
                                     <div class="card-body p-1">
                                         <h6 class="card-title fw-bold">
-                                            Happy Birthday &#x1F381
+                                            Happy Birthday &#x1F381;
                                         </h6>
                                     </div>
                                 </div>
-                                <div class="card task-hover" style="width: 100%" v-for="task in day.tasks">
+                                <div class="card task-hover" style="width: 100%" v-for="task in day.tasks"
+                                    :key="task.Id">
                                     <div class="card-body p-1">
                                         <h6 class="card-title fw-bold">
-                                            {{ task.task_name }}
+                                            {{ task.Title }}
                                         </h6>
                                     </div>
                                 </div>
-                                <div class="card task-hover" style="width: 100%" v-for="journal in day.journals">
+                                <div class="card task-hover" style="width: 100%" v-for="journal in day.journals"
+                                    :key="journal.journal_id">
                                     <div class="card-body p-1">
                                         <h6 class="card-title fw-bold">
-                                            {{ journal.journal_title }}
+                                            {{ journal.journal_name }}
                                         </h6>
                                     </div>
                                 </div>
@@ -275,8 +279,8 @@
         <div class="row">
             <div class="col d-flex justify-content-end">
 
-                <button class="btn btn-warning" @click="readTasksData(); readJournalData()">
-                    Refresh
+                <button class="btn btn-warning" @click="readTasksData(); readJournalData();">
+                    Refresh Data
                 </button>
             </div>
         </div>
@@ -303,9 +307,7 @@ export default {
             user: null,
             tasks: [],
             journals: [],
-            loggedInUserID: "",
-            userDbStatusMessage: "",
-            userDbError: "",
+            // Used for db request debugging
             taskDbStatusMessage: "",
             taskDbError: "",
             journalDbStatusMessage: "",
@@ -323,10 +325,7 @@ export default {
         },
     },
     mounted() {
-
-        this.readTasksData();
-        this.readJournalData();
-        // read User Data
+        // read User Data frist then load task and journal data
         try {
             const stored = localStorage.getItem('currentUser');
             if (!stored) return;
@@ -339,6 +338,9 @@ export default {
         } catch {
             this.user = null;
         }
+        // load task and journal data
+        this.readTasksData();
+        this.readJournalData();
     },
     methods: {
         // for time marker in the day view
@@ -530,8 +532,6 @@ export default {
         selectDateMonth(day) {
             if (day === null) return;
             this.selectedDate = day.date;
-            // recall to update the array
-            this.getPaddedMonthArray();
         },
 
         readTasksData() {
@@ -573,15 +573,19 @@ export default {
         },
         // formats the date to yyyy-mm-dd format to compare with the values in the database
         formatDateFull(day) {
-            const formattedDate = day.toISOString().split("T")[0];
-            return formattedDate
+            const year = day.getFullYear();
+            const month = String(day.getMonth() + 1).padStart(2, '0');
+            const date = String(day.getDate()).padStart(2, '0');
 
+            return `${year}-${month}-${date}`;
         },
         // remove yyyy from date returns  string mm-dd
         removeYearFromDate(formattedDay) {
+            //check if bday is null
+            if (!formattedDay) return "";
             return formattedDay.slice(5);
         },
-        // check for birthday ---> needs to be reformated to match user database
+        // check for birthday
         bDayCheck(date) {
             if (!this.user) return false;
             const formattedDate = this.removeYearFromDate(this.formatDateFull(date));
@@ -591,14 +595,14 @@ export default {
         // filter data Array by selected date and user id for tasks day view or a sepcific selected date
         getSelectedDayTaskData() {
             if (!this.user) return [];
-            return this.tasks.filter(task => task.task_date === this.formatDateFull(this.selectedDate)
-                && task.user_id === this.user.user_id);
+            return this.tasks.filter(task => task.Date === this.formatDateFull(this.selectedDate)
+                && task.UserId === this.user.user_id);
         },
         // fillter task data for a date
         getTaskDataByDate(date) {
             if (!this.user) return [];
-            return this.tasks.filter(task => task.task_date === this.formatDateFull(date)
-                && task.user_id === this.user.user_id);
+            return this.tasks.filter(task => task.Date === this.formatDateFull(date)
+                && task.UserId === this.user.user_id);
         },
 
         // filter data Array by selected date and user id for journals
@@ -636,15 +640,9 @@ export default {
     transition: ease 0.5s;
 }
 
-.yellow-hover:hover {
-    background-color: var(--bs-warning);
-    border-color: var(--bs-success);
-    opacity: 10%;
-    transition: ease 0.5s;
-}
 
 .day-cell {
-    width: 250px;
+    min-width: 150px;
     height: 150px;
 }
 </style>
