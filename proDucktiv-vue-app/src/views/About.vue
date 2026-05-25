@@ -73,7 +73,8 @@
                 <p>
                     The calendar is used to get an overview of your tasks and
                     deadlines as well as view the journal notes you have made on
-                    a particular day, week or month.
+                    a particular day, week or month. It’s primary function is that of a visual aid to help in planning
+                    out your week or even month.
                 </p>
             </div>
             <div class="col-lg-6 col-12 p-3">

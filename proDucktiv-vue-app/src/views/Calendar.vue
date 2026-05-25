@@ -278,18 +278,25 @@
     <div class="container">
         <div class="row">
             <div class="col d-flex justify-content-end">
-
                 <button class="btn btn-warning" @click="readTasksData(); readJournalData();">
                     Refresh Data
                 </button>
             </div>
         </div>
+        <div class="row p-2">
+            <div class="alert alert-danger text-center d-flex justify-content-around align-items-center" role="alert"
+                v-if="!isAuthenticated">
+                Please Sign in to view your calendar with your tasks and journal entries.
+                <button class="btn btn-danger">
+                    <router-link to="/sign-in" class=" py-3 rounded-4 fw-semibold sign-in-btn">Sign In</router-link>
+                </button>
+            </div>
+        </div>
     </div>
+
 </template>
 
 <script>
-// for daily calendar view use a table layout with the time on the side column
-// nested router for viewing individual tasks and journal entries
 import dayTimeData from "../assets/data/calendarDayData.json";
 import monthData from "../assets/data/calendarMonthData.json";
 
@@ -640,9 +647,13 @@ export default {
     transition: ease 0.5s;
 }
 
-
 .day-cell {
     min-width: 150px;
     height: 150px;
+}
+
+.sign-in-btn {
+    color: white;
+    text-decoration: none;
 }
 </style>
