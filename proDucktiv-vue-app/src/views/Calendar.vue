@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class='container'>
         <div class="row py-2">
             <div class="col-12 text-center">
                 <h1>Calendar</h1>
@@ -9,19 +9,19 @@
             <div class="col d-flex flex-row gap-3 py-2 justify-content-center">
                 <button type="button" :class="selectedView === 'day'
                     ? 'btn btn-success '
-                    : 'btn btn-secondary button-calendar-view green-hover'
+                    : 'btn btn-secondary button-calendar-view'
                     " @click="selectedView = 'day'">
                     Daily
                 </button>
                 <button type="button" :class="selectedView === 'week'
                     ? 'btn btn-success'
-                    : 'btn btn-secondary green-hover'
+                    : 'btn btn-secondary button-calendar-view'
                     " @click="selectedView = 'week'">
                     Weekly
                 </button>
                 <button type="button" :class="selectedView === 'month'
                     ? 'btn btn-success'
-                    : 'btn btn-secondary green-hover'
+                    : 'btn btn-secondary button-calendar-view'
                     " @click="selectedView = 'month'">
                     Monthly
                 </button>
@@ -35,65 +35,33 @@
         </div>
         <div class="row py-2">
             <div class="col text-center">
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="prevDay">
-                    < </button>
+                <button class="btn btn-secondary button-change-date" type="button" @click="prevDay">
+                    Prev Day
+                </button>
             </div>
             <div class="col text-center">
                 <h3>{{ selectedDate.toDateString() }}</h3>
             </div>
             <div class="col text-center">
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="nextDay">
-                    >
+                <button class="btn btn-secondary button-change-date" type="button" @click="nextDay">
+                    Next Day
                 </button>
             </div>
         </div>
         <div class="row">
-            <table class="table table-bordered">
+            <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
-                        <th scope="col" class="col text-center bg-success bg-opacity-75">
-                            <h4>
-                                {{
-                                    selectedDate
-                                        .toDateString()
-                                        .split(" ")
-                                        .slice(0, 3)
-                                        .join(" ")
-                                }}
-                            </h4>
+                        <th scope="col" class="col-1">Time</th>
+                        <th scope="col" class="col-11 text-center bg-success">
+                            <h4>{{ selectedDate.toDateString().split(" ").slice(0, 3).join(" ") }}</h4>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="col text-center bg-success bg-opacity-50">
-                            <div class="card bday-hover" style="width: 100%" v-if="true">
-                                <div class="card-body">
-                                    <h5 class="card-title fw-bold">
-                                        Happy Birthday &#x1F381
-                                    </h5>
-                                    <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
-                                </div>
-                            </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
-                                <div class="card-body">
-                                    <h5 class="card-title fw-bold">
-                                        Tasks for Today
-                                    </h5>
-                                    <p class="card-text">task description</p>
-                                </div>
-                            </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
-                                <div class="card-body">
-                                    <h5 class="card-title fw-bold">
-                                        Todays Journal
-                                    </h5>
-                                    <p class="card-text">Journal entry</p>
-                                </div>
-                            </div>
-                        </td>
+                    <tr v-for="t in dayTimeData.hourTimeArray">
+                        <th scope="row">{{ t }}</th>
+                        <td></td>
                     </tr>
                 </tbody>
             </table>
@@ -106,24 +74,22 @@
         </div>
         <div class="row">
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="prevWeek">
-                    << </button>
-                        <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                            @click="prevDay">
-                            < </button>
+                <button class="btn btn-secondary button-change-date" type="button" @click="prevWeek">
+                    Prev Week
+                </button>
+                <button class="btn btn-secondary button-change-date" type="button" @click="prevDay">
+                    Prev Day
+                </button>
             </div>
             <div class="col text-center">
                 <h3>{{ selectedDate.toDateString() }}</h3>
             </div>
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="nextDay">
-                    >
+                <button class="btn btn-secondary button-change-date" type="button" @click="nextDay">
+                    Next Day
                 </button>
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="nextWeek">
-                    >>
+                <button class="btn btn-secondary button-change-date" type="button" @click="nextWeek">
+                    Next Week
                 </button>
             </div>
         </div>
@@ -131,9 +97,8 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th scope="col" v-for="day in getWeekArray()" :class="day.isSelected
-                            ? 'bg-success bg-opacity-75'
-                            : 'green-hover bg-success bg-opacity-50'
+                        <th scope="col" class="col-1">Time</th>
+                        <th scope="col" v-for="day in getWeekArray()" :class="day.isSelected ? 'bg-success bg-opacity-100' : 'day-cell'
                             " @click="selectedDate = day.date">
                             {{
                                 day.date
@@ -146,34 +111,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td v-for="day in getWeekArray()" @click="selectedDate = day.date" :class="day.isSelected ? 'bg-success bg-opacity-50' : 'green-hover'
-                            ">
-                            <div class="card bday-hover" style="width: 100%" v-if="true">
-                                <div class="card-body p-1">
-                                    <h6 class="card-title fw-bold">
-                                        Happy Birthday &#x1F381
-                                    </h6>
-                                    <p class="card-text">Don't forget to celebrate &#x1F382 &#x1F389</p>
-                                </div>
-                            </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
-                                <div class="card-body p-1">
-                                    <h6 class="card-title fw-bold">
-                                        Tasks for Today
-                                    </h6>
-                                    <p class="card-text">task description</p>
-                                </div>
-                            </div>
-                            <div class="card task-hover" style="width: 100%" v-if="true">
-                                <div class="card-body p-1">
-                                    <h6 class="card-title fw-bold">
-                                        Todays Journal
-                                    </h6>
-                                    <p class="card-text">Journal Entry</p>
-                                </div>
-                            </div>
-                        </td>
+                    <tr v-for="t in dayTimeData.hourTimeArray">
+                        <th scope="row">{{ t }}</th>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
                 </tbody>
             </table>
@@ -186,98 +132,56 @@
         </div>
         <div class="row">
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="prevMonth">
-                    <<< </button>
-                        <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                            @click="prevWeek">
-                            << </button>
-                                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                                    @click="prevDay">
-                                    < </button>
+                <button class="btn btn-secondary button-change-date" type="button" @click="prevMonth">
+                    Prev Month
+                </button>
+                <button class="btn btn-secondary button-change-date" type="button" @click="prevWeek">
+                    Prev Week
+                </button>
+                <button class="btn btn-secondary button-change-date" type="button" @click="prevDay">
+                    Prev Day
+                </button>
             </div>
             <div class="col text-center">
                 <h3>{{ getStringDate }}</h3>
             </div>
             <div class="col justify-content-center d-flex flex-row gap-3 py-2">
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="nextDay">
-                    >
+                <button class="btn btn-secondary button-change-date" type="button" @click="nextDay">
+                    Next Day
                 </button>
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="nextWeek">
-                    >>
+                <button class="btn btn-secondary button-change-date" type="button" @click="nextWeek">
+                    Next Week
                 </button>
-                <button class="btn btn-secondary button-change-date rounded-5 green-hover" type="button"
-                    @click="nextMonth">
-                    >>>
+                <button class="btn btn-secondary button-change-date" type="button" @click="nextMonth">
+                    Next Month
                 </button>
             </div>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered">
+            <table class="table table-bordered'">
                 <caption class="text-center caption-top">
-                    {{
-                        getMonthName(selectedDate?.getMonth())
-                    }}
+                    {{ getMonthName(selectedDate?.getMonth()) }}
                 </caption>
-                <thead>
+                <thead class="month-calendar-head">
                     <tr>
-                        <th scope="col" v-for="(dayName, dayNameIndex) in monthData.dayName" :class="(selectedDate.getDay() + 6) % 7 === dayNameIndex
-                            ? 'bg-success bg-opacity-75'
-                            : 'bg-success bg-opacity-25'
-                            ">
-                            {{ dayName }}
-                        </th>
+                        <th scope="col">Monday</th>
+                        <th scope="col">Tuesday</th>
+                        <th scope="col">Wednesday</th>
+                        <th scope="col">Thursday</th>
+                        <th scope="col">Friday</th>
+                        <th scope="col">Saturday</th>
+                        <th scope="col">Sunday</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(week, wi) in getPaddedMonthArray()">
-                        <td v-for="(day, di) in week" :class="day?.isSelected
-                            ? 'bg-success bg-opacity-50 month-calendar-body'
-                            : 'day-cell green-hover'
+                        <td v-for="(day, di) in week" :class="day?.isSelected ? 'bg-success bg-opacity-75 month-calendar-body' : 'day-cell month-calendar-body'
                             " @click="selectDateMonth(day)">
-                            <h5 v-if="day != null" class="text-center">
-                                {{ day?.date.getDate() }}
-                                <hr>
-                            </h5>
-                            <div v-if="day != null">
-                                <div class="card bday-hover" style="width: 100%" v-if="true">
-                                    <div class="card-body p-1">
-                                        <h6 class="card-title fw-bold">
-                                            Happy Birthday &#x1F381
-                                        </h6>
-                                    </div>
-                                </div>
-                                <div class="card task-hover" style="width: 100%" v-if="true">
-                                    <div class="card-body p-1">
-                                        <h6 class="card-title fw-bold">
-                                            Tasks for Today
-                                        </h6>
-                                    </div>
-                                </div>
-                                <div class="card task-hover" style="width: 100%" v-if="true">
-                                    <div class="card-body p-1">
-                                        <h6 class="card-title fw-bold">
-                                            Todays Journal
-                                        </h6>
-                                    </div>
-                                </div>
-                            </div>
+                            {{ day?.date.getDate() }}
                         </td>
                     </tr>
                 </tbody>
             </table>
-        </div>
-    </div>
-    <div class="container">
-        <div class="row">
-            <div class="col d-flex justify-content-end">
-                <!-- @click=" readUserData(); readTasksData(); readJournalData()" -->
-                <button class="btn btn-warning ">
-                    Refresh
-                </button>
-            </div>
         </div>
     </div>
 </template>
@@ -295,21 +199,9 @@ export default {
             selectedView: "day",
             selectedDate: new Date(), // must be stored as date object
             task: null, // stores task information start and due dates
+            isDarkMode: true,
+            isBirthday: false,
             dayTimeData: dayTimeData,
-            monthData: monthData,
-            USER_API: "/resources/api_users.php",
-            TASK_API: "/resources/",
-            JOURNAL_API: "/resources/",
-            users: [],
-            tasks: [],
-            journals: [],
-            loggedInUserID: "",
-            userDbStatusMessage: "",
-            userDbError: "",
-            taskDbStatusMessage: "",
-            taskDbError: "",
-            journalDbStatusMessage: "",
-            journalDbError: "",
         };
     },
     computed: {
@@ -319,16 +211,15 @@ export default {
             return this.selectedDate?.toDateString() ?? "";
         },
     },
-    mounted() {
-        // readUserData();
-        // readTasksData();
-        // readJournalData();
-    },
+    mounted() { },
     methods: {
         // for time marker in the day view
         getCurrentTime() {
             // returns the current time in HH:MM:SS format
             return new Date().toTimeString().split(" ")[0];
+        },
+        toggleDarkMode() {
+            this.isDarkMode = !this.isDarkMode;
         },
         // goes to the next day in the calendar view
         nextDay() {
@@ -406,7 +297,6 @@ export default {
                         1 + i,
                     ),
                     isSelected: false,
-                    isBirthday: false,
                 });
             }
             return monthArray;
@@ -471,7 +361,6 @@ export default {
                         monday.getDate() + i,
                     ),
                     isSelected: false,
-                    isBirthday: false,
                 });
             }
             this.checkSelectedDate(weekArray);
@@ -499,117 +388,9 @@ export default {
             // recall to update the array
             this.getPaddedMonthArray();
         },
-
-        // fetch and read User data
-        readUserData() {
-            fetch(USER_API)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error:${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    this.users = data;
-                    this.userDbStatusMessage = "Successful :)";
-                    this.userDbError = "";
-                })
-                .catch((error) => {
-                    this.userDbError = error.message;
-                });
-        },
-        // fetch and read Tasks data
-        readTasksData() {
-            fetch(TASK_API)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error:${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    this.tasks = data;
-                    this.taskDbStatusMessage = "Successful :)";
-                    this.taskDbError = "";
-                })
-                .catch((error) => {
-                    this.taskDbError = error.message;
-                });
-        },
-        // fetch and read Journal data
-        readJournalData() {
-            fetch(JOURNAL_API)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error:${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    this.journals = data;
-                    this.journalDbStatusMessage = "Successful :)";
-                    this.journalDbError = "";
-                })
-                .catch((error) => {
-                    this.journalDbError = error.message;
-                });
-        },
-        // formats the date to dd-mm-yyyy format to compare with the values in the database
-        formatDate(day) {
-            const formattedDate = day.toLocaleDateString("en-au").replace(/\//g, "-");
-            return formattedDate
-        },
-        // check for birthday ---> needs to be reformated to match user database
-        bDayCheck(day) {
-            const formattedDate = formatDate(day)
-            if (users.id === loggedInUserID && users.dob === formattedDate) {
-                this.selectedDate.isBrithday = true;
-            }
-        },
-        // filter data Array by selected date and user id for tasks
-        getDayTaskData() { },
-        // filter data Array by week array and user id for tasks
-        getWeekTaskData() { },
-        // filter data Array by month array and user id for tasks
-        getMonthTaskData() { },
-        // filter data Array by selected date and user id for journal
-        getDayJournalData() { },
-        // filter data Array by week array and user id for journal
-        getWeekJournalData() { },
-        // filter data Array by month array and user id for journal
-        getMonthJournalData(data) { },
+        // check if birthday
+        //
     },
 };
 </script>
-<style>
-.green-hover:hover {
-    background-color: var(--bs-success);
-    border-color: var(--bs-success);
-    opacity: 45%;
-    transition: ease 0.5s;
-}
-
-.task-hover:hover {
-    background-color: mediumaquamarine;
-    border-color: var(--bs-success);
-    transition: ease 0.5s;
-}
-
-.bday-hover {
-    background-color: var(--bs-warning);
-    border-color: palevioletred;
-    transition: ease 0.5s;
-}
-
-.yellow-hover:hover {
-    background-color: var(--bs-warning);
-    border-color: var(--bs-success);
-    opacity: 10%;
-    transition: ease 0.5s;
-}
-
-.day-cell {
-    width: 250px;
-    height: 150px;
-}
-</style>
+<style></style>
