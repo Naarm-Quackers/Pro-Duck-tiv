@@ -1,7 +1,7 @@
 <template>
     <v-container class="py-10">
         <v-row justify="center">
-            <v-col cols="12" md="8", lg="6">
+            <v-col cols="12" md="8" lg="6">
                 <v-form @submit.prevent="signIn">
                     <v-card class="pa-6" elevation="8" rounded="x1">
                         <h4 class="text-h6 font-weight-bold mb-3">Login</h4>
