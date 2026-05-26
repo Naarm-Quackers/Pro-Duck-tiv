@@ -42,11 +42,27 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
+	// registration information
 	$user_name          = mysqli_real_escape_string($conn, isset($input['user_name'])          ? $input['user_name']          : '');
 	$user_password      = mysqli_real_escape_string($conn, isset($input['user_password'])      ? $input['user_password']      : '');
 	$user_first_name    = mysqli_real_escape_string($conn, isset($input['user_first_name'])    ? $input['user_first_name']    : '');
 	$user_last_name     = mysqli_real_escape_string($conn, isset($input['user_last_name'])     ? $input['user_last_name']     : '');
 	$user_date_of_birth = mysqli_real_escape_string($conn, isset($input['user_date_of_birth']) ? $input['user_date_of_birth'] : '');
+
+	// enforce user_name uniqueness on the server too
+	$checkSql = "SELECT COUNT(*) AS cnt FROM `$table` WHERE user_name = '$user_name'";
+	$checkResult = mysqli_query($conn, $checkSql);
+	$checkRow = mysqli_fetch_assoc($checkResult);
+
+	// check number of entries this username has, error 409 if it already exists
+	if ((int)$checkRow['cnt'] > 0) {
+		http_response_code(409);
+		echo json_encode([
+			'success' => false,
+			'error' => 'Username already exists'
+		]);
+		exit;
+	}
 
 	$sql = "INSERT INTO `$table` (user_name, user_password, user_first_name, user_last_name, user_date_of_birth) VALUES ('$user_name', '$user_password', '$user_first_name', '$user_last_name', '$user_date_of_birth')";
 

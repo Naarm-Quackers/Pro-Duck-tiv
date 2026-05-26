@@ -57,6 +57,8 @@
                                 variant="outlined"
                                 density="comfortable"
                                 :rules="[rules.required, rules.min3]"
+                                :error-messages="usernameError ? [usernameError] : []"
+                                @update:model-value="usernameError = ''"
                                 />            
                             </v-col>
 
@@ -104,9 +106,12 @@
 
 <script setup>
 import {reactive, ref} from "vue"
+import {useRouter} from "vue-router"
 
+const router = useRouter()
 const regFormRef = ref(null)
 const isValid = ref(false)
+const usernameError = ref("")
 
 const form = reactive({
     fName: "",
@@ -126,10 +131,12 @@ const rules = {
 }
 
 async function submitForm() {
+    usernameError.value = ""
+
     const {valid} = await regFormRef.value.validate()
     if (!valid) return
-    
-    const requestOptions = {
+
+    const response = await fetch('/resources/api_users.php', {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -139,14 +146,16 @@ async function submitForm() {
             user_last_name: form.lName,
             user_date_of_birth: form.bDay,
         })
-    }
+    })
 
-    try {
-        const response = await fetch('/resources/api_users.php', requestOptions)
-        const data = await response.json()
-        console.log("saved:", data)
-    } catch (error) {
-        console.error("request failed:", error)
+    const data = await response.json()
+
+    // if response says username already exists, display relevant error message
+    if (response.status === 409) {
+        usernameError.value = data.error || "Username is already in use."
+        return
     }
+    // take user to sign-in page on successful registration
+    router.push("/sign-in")
 }
 </script>
