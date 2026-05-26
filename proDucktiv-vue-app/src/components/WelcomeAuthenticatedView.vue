@@ -1,20 +1,20 @@
 <template>
-	<!-- Authenticated dashboard container. -->
+	<!-- Authenticated dashboard container -->
 	<div class="row">
-		<!-- Header row: greeting and logout action. -->
+		<!-- Header row: greeting and logout action -->
 		<div class="d-flex justify-content-between align-items-start mb-3">
 			<div>
-				<h4 class="mb-0 fw-semibold">Hello, {{ props.username }}!</h4>
+				<h4 class="mb-0 fw-semibold">Hello, {{ currentUser?.user_first_name }}!</h4>
 			</div>
 
 			<div class="d-flex gap-2">
-				<button class="btn btn-outline-danger" @click="emit('toggle-auth')">
+				<button class="btn btn-outline-danger" @click="logout">
 					Log Out
 				</button>
 			</div>
 		</div>
 
-		<!-- Top cards: productivity summary and mood voting. -->
+		<!-- Top cards: productivity summary and mood voting -->
 		<div class="row g-3 mb-3">
 			<div class="col-12 col-md-6">
 				<div class="card border-0 shadow-sm h-100">
@@ -104,7 +104,7 @@
 			</div>
 		</div>
 
-		<!-- Middle cards: task counters and aggregate mood stats. -->
+		<!-- Middle cards: task counters and aggregate mood stats -->
 		<div class="row g-3 mb-3">
 			<div v-if="tasksError" class="col-12">
 				<div class="alert alert-danger py-2 mb-0" role="alert">
@@ -178,7 +178,7 @@
 			</div>
 		</div>
 
-		<!-- Bottom cards: today's tasks, deadlines, and recent journals. -->
+		<!-- Bottom cards: today's tasks, deadlines, and recent journals -->
 		<div class="row g-3">
 			<div class="col-12 col-md-7">
 				<div class="card border-0 shadow-sm h-100">
@@ -203,10 +203,10 @@
 						<ul v-else class="list-group list-group-flush">
 							<li
 								v-for="task in todaysTasks"
-								:key="task.id"
+								:key="task.Id"
 								class="list-group-item"
 							>
-								{{ task.title }}
+								{{ task.Title }}
 
 								<span
 									class="badge ms-2"
@@ -226,8 +226,6 @@
 												: 'Active'
 									}}
 								</span>
-
-								
 							</li>
 						</ul>
 
@@ -243,7 +241,7 @@
 			</div>
 
 			<div class="col-12 col-md-5 d-flex flex-column gap-3">
-				<!-- Upcoming deadlines list card. -->
+				<!-- Upcoming deadlines list card -->
 				<div class="card border-0 shadow-sm">
 					<div class="card-body">
 						<h6>
@@ -262,16 +260,16 @@
 						<ul v-else class="list-group list-group-flush">
 							<li
 								v-for="d in upcomingDeadlines"
-								:key="d.id"
+								:key="d.Id"
 								class="list-group-item px-0"
 							>
-								{{ d.title }} {{ d.date }} at {{ d.time }}
+								{{ d.Title }} {{ d.Date }} at {{ d.Time }}
 							</li>
 						</ul>
 					</div>
 				</div>
 
-				<!-- Recent journals list card with mood status badges. -->
+				<!-- Recent journals list card with mood status badges -->
 				<div class="card border-0 shadow-sm">
 					<div class="card-body">
 						<h6>
@@ -318,6 +316,12 @@
 							</li>
 						</ul>
 
+						<div v-if="journalsError" class="mt-2 text-center">
+							<small class="text-danger">
+								Journal database error: {{ journalsError }}
+							</small>
+						</div>
+
 						<router-link to="/journal">
 							<button class="btn btn-outline-secondary btn-sm">
 								View Journal
@@ -330,296 +334,309 @@
 	</div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script>
+export default {
+	emits: ['toggle-auth'],
+	data() {
+		return {
+			// API endpoints 
+			USERS_API: '/resources/api_users.php',
+			MOODS_API: '/resources/api_moods.php',
+			TASKS_API: '/resources/api_tasks.php',
+			JOURNAL_API: '/resources/api_journals.php',
 
-// Component contracts: parent-triggered logout and signed-in user context.
-const emit = defineEmits(['toggle-auth'])
-const props = defineProps({
-	username: {
-		type: String,
-		default: 'User',
+			currentUser: null,
+			moodUp: 0,
+			moodDown: 0,
+			userMood: null,
+			todaysMood: null,
+			allTasks: [],
+			recentJournal: [],
+
+			// Error states for each API
+			journalsError: '',
+			moodsError: '',
+			tasksError: '',
+		}
 	},
-	userId: {
-		type: [Number, String],
-		default: null,
+	computed: {
+		// Filter all the tasks to to the ones due today
+		todaysTasks() {
+			const today = this.getLocalDateString()
+			return this.allTasks.filter((task) => task.Date === today)
+		},
+
+		// Couunts how many tasks completed today through filtering to check complete status
+		completedTasks() {
+			return this.todaysTasks.filter((task) => this.isTaskComplete(task)).length
+		},
+
+		// Counts active tasks by filtering not complete status independent of due date
+		activeTasks() {
+			return this.allTasks.filter((task) => !this.isTaskComplete(task)).length
+		},
+
+		// Counts overdue tasks
+		overdueTasks() {
+			// Filters to tasks that are not complete and past due date by checking hours until due is negative
+			return this.allTasks.filter((task) => {
+				const hoursLeft = this.getHoursUntilDue(task)
+
+				return !this.isTaskComplete(task) && hoursLeft !== null && hoursLeft < 0
+			}).length
+		},
+
+		// Gets upcoming deadlines by filtering tasks that are not complete and due in the future
+		upcomingDeadlines() {
+			return this.allTasks
+				.filter((task) => {
+					const hoursLeft = this.getHoursUntilDue(task)
+
+					return !this.isTaskComplete(task) && hoursLeft !== null && hoursLeft >= 0
+				})
+				// Sorts by due date/time by parsing to getDueDateTime and comparing timestamps, then takes the 5 soonest deadlines
+				.sort((a, b) => this.getDueDateTime(a).getTime() - this.getDueDateTime(b).getTime())
+				.slice(0, 5)
+		},
+
+		// Calculates productivity score as percentage of today's tasks completed
+		productivityScore() {
+			// If no tasks are completed todday, returns 0 to display
+			if (this.todaysTasks.length === 0) return 0
+
+			// Gets the amount of completed tasks today by status and divides by all tasks due today to get percentage
+			const done = this.todaysTasks.filter((task) => this.isTaskComplete(task)).length
+			return Math.round((done / this.todaysTasks.length) * 100)
+		},
 	},
-})
+	mounted() {
+		// If Task Editor selected from Task page, load user from local storage
+		try {
+			const stored = localStorage.getItem('currentUser')
 
-
-// API endpoint definitions.
-const MOODS_API = '/resources/api_moods.php'
-const TASKS_API = '/resources/api_tasks.php'
-const JOURNAL_API = '/resources/api_journals.php'
-
-
-// -----------------------------
-// Journal fetching and formatting
-// -----------------------------
-
-const recentJournal = ref([])
-const journalsError = ref('')
-
-function formatJournalDate(iso) {
-    if (!iso) return ''
-    return new Date(`${iso}T00:00:00`).toLocaleDateString('en-AU', {
-        day: 'numeric',
-        month: 'short',
-    })
-}
-
-async function fetchRecentJournals() {
-    journalsError.value = ''
-
-    try {
-        if (!currentUserId.value) {
-            recentJournal.value = []
-            return
-        }
-
-	const response = await fetch(`${JOURNAL_API}?fld=user_id&key=${currentUserId.value}`)
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`)
-        }
-
-        const rows = await response.json()
-        const journals = Array.isArray(rows) ? rows : []
-
-		// Take the 5 most recent journal entries and map them to shape to display
-        recentJournal.value = journals.slice(0, 5).map((journal) => ({
-            title: journal.journal_name,
-            status: journal.journal_status || 'none',
-            date: formatJournalDate(journal.journal_date),
-        }))
-    } catch (error) {
-        journalsError.value =
-            error instanceof Error ? error.message : 'Failed to load journals'
-        recentJournal.value = []
-    }
-}
-
-// -----------------------------
-// Mood fetching and voting
-// -----------------------------
-
-// Signed-in user ID derived from props.
-const currentUserId = computed(() => {
-	const parsed = Number(props.userId)
-	return Number.isFinite(parsed) ? parsed : null
-})
-
-// Mood UI state.
-const moodUp = ref(0)
-const moodDown = ref(0)
-const userMood = ref(null)
-const todaysMood = ref(null)
-const moodsError = ref('')
-
-async function fetchMoods() {
-	moodsError.value = ''
-
-	try {
-		const response = await fetch(MOODS_API)
-
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}`)
-		}
-
-		const data = await response.json()
-		const rows = Array.isArray(data) ? data : []
-
-		const today = getLocalDateString()
-
-		const todaysRows = rows.filter((row) => row.mood_date === today)
-
-		moodUp.value = todaysRows.filter((row) => row.mood_value === 'up').length
-		moodDown.value = todaysRows.filter((row) => row.mood_value === 'down').length
-
-		const myMoodToday = todaysRows.find(
-			(row) => Number(row.user_id) === Number(currentUserId.value)
-		)
-
-		if (myMoodToday) {
-			userMood.value = myMoodToday.mood_value
-			todaysMood.value = myMoodToday.mood_value
-		} else {
-			userMood.value = null
-			todaysMood.value = null
-		}
-	} catch (error) {
-		moodsError.value = error instanceof Error ? error.message : 'Failed to load moods'
-		moodUp.value = 0
-		moodDown.value = 0
-		userMood.value = null
-		todaysMood.value = null
-	}
-}
-
-// Posting mood data to the API when the user votes.
-const onSetMood = async (mood) => {
-	const today = getLocalDateString()
-	try {
-		const response = await fetch(MOODS_API, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				user_id: currentUserId.value,
-				mood_date: today,
-				mood_value: mood,
-			}),
-		})
-
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}`)
-		}
-
-		userMood.value = mood
-		todaysMood.value = mood
-
-		await fetchMoods()
-	} catch (error) {
-		console.error(error)
-		alert('Could not save mood to database.')
-	}
-}
-
-// -----------------------------
-// Task fetching and calculations
-// -----------------------------
-
-// Task UI state.
-const allTasks = ref([])
-const tasksError = ref('')
-
-function normalizeTask(task) {	
-	return {
-		...task,
-		id: task.Id,
-		title: task.Title,
-		type: task.Type,
-		date: task.Date,
-		time: task.Time,
-		location: task.Location,
-		description: task.Description,
-		completed: task.Completed === true,
-		status: task.Completed === true ? 'Complete' : 'Active',
-	}
-}
-
-async function fetchTasks() {
-	tasksError.value = ''
-
-	try {
-		if (!currentUserId.value) {
-			allTasks.value = []
+			if (!stored) {
+				return
+			}
+			
+			const parsed = JSON.parse(stored)
+			this.currentUser = {
+				user_id: parsed.user_id,
+				user_first_name: parsed.user_first_name,
+			}
+		} catch (error) {
+			this.currentUser = null
 			return
 		}
 
-		const response = await fetch(`${TASKS_API}?UserId=${currentUserId.value}`)
+		// Fetch all necessary data for the dashboard on mount
+		this.fetchTasks()
+		this.fetchMoods()
+		this.fetchRecentJournals()
+	},
 
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}`)
-		}
+	methods: {
+		// Emits event to parent to toggle auth state and return to unauthenticated welcome view when logout clicked
+		logout() {
+			this.$emit('toggle-auth')
+		},
+		
+		// Fetches the 5 most recent journal entries for current user
+		fetchRecentJournals() {
+			this.journalsError = ''
 
-		const data = await response.json()
-		const rows = Array.isArray(data) ? data : []
+			if (!this.currentUser) {
+				this.recentJournal = []
+				return
+			}
 
-		allTasks.value = rows.map((task) => normalizeTask(task))
-	} catch (error) {
-		tasksError.value = error instanceof Error ? error.message : 'Failed to load tasks'
-		allTasks.value = []
-	}
+			return fetch(`${this.JOURNAL_API}?fld=user_id&key=${this.currentUser.user_id}`)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}`)
+					}
+
+					return response.json()
+				})
+				.then((rows) => {
+					const journals = Array.isArray(rows) ? rows : []
+
+					// Take the 5 most recent journal entries and map them into display rows
+					this.recentJournal = journals.slice(0, 5).map((journal) => ({
+						title: journal.journal_name,
+						status: journal.journal_status,
+						date: this.formatJournalDate(journal.journal_date),
+					}))
+				})
+				.catch((error) => {
+					this.journalsError =
+						error instanceof Error ? error.message : 'Failed to load journals'
+					this.recentJournal = []
+				})
+		},
+
+		// Fetches mood data for current user
+		// Fetches mood data for all users for today
+		fetchMoods() {
+			this.moodsError = ''
+
+			if (!this.currentUser) {
+				this.moodUp = 0
+				this.moodDown = 0
+				this.userMood = null
+				this.todaysMood = null
+				return
+			}
+
+			return fetch(this.MOODS_API)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}`)
+					}
+
+					return response.json()
+				})
+				.then((data) => {
+					const rows = Array.isArray(data) ? data : []
+					const today = this.getLocalDateString()
+					const todaysRows = rows.filter((row) => row.mood_date === today)
+					// Count how many users voted mood up vs down today by filtering to mood value and counting length of results
+					this.moodUp = todaysRows.filter((row) => row.mood_value === 'up').length
+					this.moodDown = todaysRows.filter((row) => row.mood_value === 'down').length
+					
+					// Find the current user's mood entry for today, if it exists use this to display on UI
+					const myMoodToday = todaysRows.find(
+						(row) => Number(row.user_id) === Number(this.currentUser.user_id)
+					)
+
+					// If user voted today set their mood to value
+					if (myMoodToday) {
+						this.userMood = myMoodToday.mood_value
+						this.todaysMood = myMoodToday.mood_value
+					// If not, reset user mood and allow them to vote
+					} else {
+						this.userMood = null
+						this.todaysMood = null
+					}
+				})
+				.catch((error) => {
+					this.moodsError = error instanceof Error ? error.message : 'Failed to load moods'
+					this.moodUp = 0
+					this.moodDown = 0
+					this.userMood = null
+					this.todaysMood = null
+				})
+		},
+		
+		
+		onSetMood(mood) {
+			const today = this.getLocalDateString()
+
+			if (!this.currentUser) {
+				return
+			}
+			
+			// Sends POST request to mood API for saving today mood for current user
+			return fetch(this.MOODS_API, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					user_id: this.currentUser.user_id,
+					mood_date: today,
+					mood_value: mood,
+				}),
+			})
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}`)
+					}
+
+					// After successful mood saving update user mood
+					// Displays user mood in How was your day card and disables voting buttons
+					// Finally refetch all moods to show on dashboard
+					this.userMood = mood
+					this.todaysMood = mood
+					return this.fetchMoods()
+				})
+				.catch((error) => {
+					console.error(error)
+					alert('Could not save mood to database.')
+				})
+		},
+		// Fetches tasks for current user
+		fetchTasks() {
+			this.tasksError = ''
+
+			if (!this.currentUser) {
+				this.allTasks = []
+				return
+			}
+
+			return fetch(`${this.TASKS_API}?UserId=${this.currentUser.user_id}`)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}`)
+					}
+
+					return response.json()
+				})
+				.then((data) => {
+					const rows = Array.isArray(data) ? data : []
+
+					this.allTasks = rows
+				})
+				.catch((error) => {
+					this.tasksError = error instanceof Error ? error.message : 'Failed to load tasks'
+					this.allTasks = []
+				})
+		},
+		formatJournalDate(iso) {
+			if (!iso) return ''
+
+			return new Date(`${iso}T00:00:00`).toLocaleDateString('en-AU', {
+				day: 'numeric',
+				month: 'short',
+			})
+		},
+		// Converts a Date object into a local YYYY-MM-DD string for comparison with task dates
+		getLocalDateString(date = new Date()) {
+			const year = date.getFullYear()
+			const month = String(date.getMonth() + 1).padStart(2, '0')
+			const day = String(date.getDate()).padStart(2, '0')
+
+			return `${year}-${month}-${day}`
+		},
+		// Checks if task is complete based on field value, returns boolean
+		isTaskComplete(task) {
+			return task.Completed === true
+		},
+		// Parses task date and time into due object
+		getDueDateTime(task) {
+			if (!task.Date) return null
+
+			const taskTime = task.Time || '23:59'
+			const due = new Date(`${task.Date}T${taskTime}`)
+			// Returns null if task does not have specified due date on creation
+			if (Number.isNaN(due.getTime())) return null
+
+			return due
+		},
+		// Returns hours until task is due, or null if no valid due date
+		getHoursUntilDue(task) {
+			const due = this.getDueDateTime(task)
+
+			if (!due) return null
+			
+			// Calculate hours until due by finding the difference in milliseconds and converting to hours
+			return Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60))
+		},
+		// Task counts as overdue if not complete & past the due date/time
+		isTaskOverdue(task) {
+			const hoursLeft = this.getHoursUntilDue(task)
+
+			return !this.isTaskComplete(task) && hoursLeft !== null && hoursLeft < 0
+		},
+	},
 }
-
-// Shared date formatter for API-compatible local date strings.
-function getLocalDateString(date = new Date()) {
-	const year = date.getFullYear()
-	const month = String(date.getMonth() + 1).padStart(2, '0')
-	const day = String(date.getDate()).padStart(2, '0')
-	return `${year}-${month}-${day}`
-}
-
-function isTaskComplete(task) {
-	const isCompleted =
-		task.Completed === true
-	return isCompleted
-}
-
-function getDueDateTime(task) {
-	if (!task.date) return null
-
-	const taskTime = task.time || '23:59'
-	const due = new Date(`${task.date}T${taskTime}`)
-
-	if (Number.isNaN(due.getTime())) return null
-
-	return due
-}
-
-function getHoursUntilDue(task) {
-	const due = getDueDateTime(task)
-
-	if (!due) return null
-
-	return Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60))
-}
-
-function isTaskOverdue(task) {
-	const hoursLeft = getHoursUntilDue(task)
-
-	return !isTaskComplete(task) && hoursLeft !== null && hoursLeft < 0
-}
-
-// Task dashboard metrics.
-const todaysTasks = computed(() => {
-	const today = getLocalDateString()
-	
-	return allTasks.value.filter((t) => t.date === today)
-})
-
-const completedTasks = computed(() => {
-	return todaysTasks.value.filter((task) => isTaskComplete(task)).length
-})
-
-const activeTasks = computed(() => {
-	return allTasks.value.filter((task) => !isTaskComplete(task)).length
-})
-
-const overdueTasks = computed(() => {
-	return allTasks.value.filter((task) => {
-		const hoursLeft = getHoursUntilDue(task)
-
-		return !isTaskComplete(task) && hoursLeft !== null && hoursLeft < 0
-	}).length
-})
-
-
-
-const upcomingDeadlines = computed(() => {
-	return allTasks.value
-		.filter((task) => {
-			const hoursLeft = getHoursUntilDue(task)
-
-			return !isTaskComplete(task) && hoursLeft !== null && hoursLeft >= 0
-		})
-		.sort((a, b) => getDueDateTime(a).getTime() - getDueDateTime(b).getTime())
-		.slice(0, 5)
-})
-
-// Productivity score shown in the hero card.
-const productivityScore = computed(() => {
-	if (todaysTasks.value.length === 0) return 0
-
-	const done = todaysTasks.value.filter((task) => isTaskComplete(task)).length
-	return Math.round((done / todaysTasks.value.length) * 100)
-})
-
-// Initial data load when the authenticated welcome view mounts.
-onMounted(() => {
-	fetchTasks()
-	fetchMoods()
-	fetchRecentJournals()
-})
 </script>

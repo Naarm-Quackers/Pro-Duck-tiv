@@ -1,7 +1,7 @@
 <template>
-	<!-- Public content shown before sign-in. -->
+	<!-- Public content shown before sign-in -->
 	<div class="row">
-		<!-- Hero copy and product positioning. -->
+		<!-- Hero copy and product positioning -->
 		<div class="col-12">
 			<h1>
                 Welcome to proDucktiv
@@ -10,7 +10,7 @@
 			<p class="lead">The all-in-one productivity app to help you stay organized and focused.</p>
 		</div>
 
-		<!-- Links to sign-in and about pages. -->
+		<!-- Links to sign-in and about pages -->
 		<div class="row">
 			<div class="col d-flex justify-content-center gap-2">
 				<router-link to="/sign-in" class="btn btn-outline-success">
@@ -24,13 +24,13 @@
 
 		<hr class="featurette-divider m-4">
 
-		<!-- Feature overview heading. -->
+		<!-- Feature overview heading -->
 		<div class="col-12">
 			<h2>Everything you need</h2>
 			<p class="lead">Features designed to keep you productive and organized.</p>
 		</div>
 
-		<!-- Product showcase carousel. -->
+		<!-- Product showcase carousel -->
 		<div id="myCarousel" class="carousel slide" data-bs-ride="carousel">
 			<div class="carousel-indicators">
 				<button type="button" data-bs-target="#myCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
@@ -85,13 +85,13 @@
 
 		<hr class="featurette-divider m-4">
 
-		<!-- Social statistics section. -->
+		<!-- Social statistics section -->
 		<div class="col-12">
 			<h2>Tried and Tested</h2>
 			<p class="lead">Features designed to keep you productive and organized.</p>
 		</div>
 
-		<!-- Stats section. -->
+		<!-- Stats section -->
 		<div class="row text-center g-4 mb-5">
 			<div class="col-12 col-md-4">
 				<div class="d-flex justify-content-center align-items-center gap-2 mb-1">
@@ -121,12 +121,12 @@
 <script setup>
 import { ref } from 'vue'
 
-// Marketing stats (replace with API data later).
+// Marketing stats (replace with API data later)
 const productivityIncrease = ref('85%')
 const activeUsers = ref('1K+')
 const tasksCompleted = ref('1M+')
 
-// Carousel placeholder images (replace with project assets later).
+// Carousel placeholder images (replace with project assets later)
 const taskManagement = 'https://picsum.photos/seed/taskmanagement/1200/600'
 const calendarView  = 'https://picsum.photos/seed/calendar/1200/600'
 const dailyJournal = 'https://picsum.photos/seed/dailyjournal/1200/600'
