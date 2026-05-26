@@ -410,23 +410,17 @@ export default {
             const totalMonthDays = this.getTotalDaysInMonth();
             const monthArray = [];
             for (let i = 0; i < totalMonthDays; i += 1) {
+                // create a date to reuse in for date, task and jorunals
+                const currentDate = new Date(
+                    this.selectedDate.getFullYear(),
+                    this.selectedDate.getMonth(),
+                    1 + i,
+                );
                 monthArray.push({
-                    date: new Date(
-                        this.selectedDate.getFullYear(),
-                        this.selectedDate.getMonth(),
-                        1 + i,
-                    ),
+                    date: currentDate,
                     isSelected: false,
-                    tasks: this.getTaskDataByDate(new Date(
-                        this.selectedDate.getFullYear(),
-                        this.selectedDate.getMonth(),
-                        1 + i,
-                    )),
-                    journals: this.getJournalDataByDate(new Date(
-                        this.selectedDate.getFullYear(),
-                        this.selectedDate.getMonth(),
-                        1 + i,
-                    )),
+                    tasks: this.getTaskDataByDate(currentDate),
+                    journals: this.getJournalDataByDate(currentDate),
                 });
             }
             return monthArray;
@@ -484,23 +478,16 @@ export default {
             const monday = this.getWeekMonday();
             const weekArray = [];
             for (let i = 0; i < 7; i += 1) {
+                const currentDate = new Date(
+                    monday.getFullYear(),
+                    monday.getMonth(),
+                    monday.getDate() + i,
+                );
                 weekArray.push({
-                    date: new Date(
-                        monday.getFullYear(),
-                        monday.getMonth(),
-                        monday.getDate() + i,
-                    ),
+                    date: currentDate,
                     isSelected: false,
-                    tasks: this.getTaskDataByDate(new Date(
-                        monday.getFullYear(),
-                        monday.getMonth(),
-                        monday.getDate() + i,
-                    )),
-                    journals: this.getJournalDataByDate(new Date(
-                        monday.getFullYear(),
-                        monday.getMonth(),
-                        monday.getDate() + i,
-                    )),
+                    tasks: this.getTaskDataByDate(currentDate),
+                    journals: this.getJournalDataByDate(currentDate),
                 });
             }
             this.checkSelectedDate(weekArray);
