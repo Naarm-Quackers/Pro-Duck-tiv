@@ -8,21 +8,32 @@
                 <div>
                     <h1 class="mb-1">Edit Task</h1>
                     <p v-if="!showSelectTaskMessage" class="text-secondary mb-0">Edit a task from your planner</p>
+                    <p v-else-if="showSelectTaskMessage" class="text-secondary mb-0">Choose a task from your planner</p>
                 </div>
 
-
-                <!-- Guidance shown when no task id is available in the route -->
-                <div v-if="showSelectTaskMessage" class="alert alert-info" role="alert">
-                    Please choose a task first from the Task page, then click Edit to open it here.
+                <!-- Task selector shown when no task is selected to edit or when user navigates to the editor without a task id in the route -->
+                <div class="card border-0 bg-light-subtle p-3 mt-3 mb-3">
+                    <label for="taskSelector" class="form-label mb-1">Select Task</label>
+                    <div class="d-flex gap-2">
+                        <select id="taskSelector" v-model="selectedTaskId" class="form-select">
+                            <option value="">Choose a task</option>
+                            <option v-for="item in availableTasks" :key="item.Id" :value="String(item.Id)">
+                                {{ item.Title }}
+                            </option>
+                        </select>
+                        <button type="button" class="btn btn-outline-success" :disabled="!selectedTaskId" @click="openSelectedTask">
+                            Load
+                        </button>
+                    </div>
                 </div>
 
                 <!-- API or validation error message -->
-                <div v-else-if="err" class="alert alert-danger" role="alert">
+                <div v-if="err" class="alert alert-danger" role="alert">
                     {{ err }}
                 </div>
 
                 <!-- Editable task form shown when task data is available -->
-                <form v-else @submit.prevent="saveTask">
+                <form v-if="!showSelectTaskMessage && !err" @submit.prevent="saveTask">
 
                     <!-- Task title input -->
                     <div class="mb-3">
@@ -120,11 +131,13 @@ export default {
         return {
             // API task enpoint
             TASKS_API: '/cos30043/s103071591/proDucktiv/resources/api_tasks.php',
-
+            
             showSelectTaskMessage: false,
             isSaving: false,
             task: temporaryTask(),
             currentUser: null,
+            selectedTaskId: '',
+            availableTasks: [],
 
             // Error message
             err: ''
@@ -132,16 +145,11 @@ export default {
     },
 
     mounted() {
-        // If Task Editor selected from navbar then return to Task page
-        if (!this.$route.params.id) {
-            this.showSelectTaskMessage = true
-            return
-        }
-
-        // If Task Editor selected from Task page, load user from local storage
+        // Load user from local storage to get user id for API calls
         try {
             const stored = localStorage.getItem('currentUser')
 
+            // If no user in local storage, show error message to sign in
             if (!stored) {
                 return
             }
@@ -157,19 +165,40 @@ export default {
             return
         }
 
-        this.fetchTask()
+        
+        // Load all tasks for user
+        this.fetchTasks().then(() => {
+            // Take routed id
+            const routeTaskId = this.$route.params.id
+
+            // If no task id is provided in the route, show the select task message
+            if (!routeTaskId) {
+                this.showSelectTaskMessage = true
+                return
+            }
+            
+            // Load the task corresponding to the routed id
+            this.selectedTaskId = String(routeTaskId)
+            this.showSelectTaskMessage = false
+            this.fetchRoutedTask(routeTaskId)
+        })
     },
 
     // Show a message prompting the user to select a task if the route parameter changes and no id is present, otherwise load the new task
     watch: {
+        // If route changes but no task Id provided show select task message
         '$route.params.id'(newId) {
             if (!newId) {
+                this.selectedTaskId = ''
+                this.task = temporaryTask()
                 this.showSelectTaskMessage = true
                 return
             }
-
+            
+            // If new route has task id, load the task accordingly
+            this.selectedTaskId = String(newId)
             this.showSelectTaskMessage = false
-            this.fetchTask()
+            this.fetchRoutedTask(newId)
         }
     },
 
@@ -187,8 +216,17 @@ export default {
             })
         },
 
-        // Loads the selected task and maps API data into the form model
-        fetchTask() {
+        // Pushes selected id into the route so URL and editor stay in sync
+        openSelectedTask() {
+            if (!this.selectedTaskId) {
+                return
+            }
+
+            this.$router.push(`/task-editor/${this.selectedTaskId}`)
+        },
+
+        // Loads all tasks for selector so editor can be used without route-provided ids
+        fetchTasks() {
             this.err = ''
 
             try {
@@ -198,14 +236,52 @@ export default {
                     throw new Error('No logged-in user found. Please sign in before editing tasks.')
                 }
 
-                return fetch(`${this.TASKS_API}?UserId=${encodeURIComponent(userId)}&TaskId=${this.$route.params.id}`)
+                return fetch(`${this.TASKS_API}?UserId=${encodeURIComponent(userId)}`)
                     .then((res) => this.ReadJsonResponse(res))
                     .then((data) => {
+                        if (!Array.isArray(data)) {
+                            throw new Error(data?.error || 'Could not load tasks list')
+                        }
+
+                        this.availableTasks = data
+                    })
+            } catch (error) {
+                this.err = error instanceof Error ? error.message : 'Could not load tasks list'
+                return Promise.resolve()
+            }
+        },
+
+        // Loads the selected task and maps API data into the form model
+        fetchRoutedTask(taskId = this.$route.params.id) {
+            this.err = ''
+
+            try {
+                const userId = String(this.currentUser?.user_id)
+                const selectedId = String(taskId).trim()
+
+                if (!userId.trim()) {
+                    throw new Error('No logged-in user found. Please sign in before editing tasks.')
+                }
+
+                if (!selectedId) {
+                    this.showSelectTaskMessage = true
+                    return Promise.resolve()
+                }
+
+                return fetch(`${this.TASKS_API}?UserId=${encodeURIComponent(userId)}&TaskId=${encodeURIComponent(selectedId)}`)
+                    .then((res) => this.ReadJsonResponse(res))
+                    .then((data) => {
+                        if (!Array.isArray(data)) {
+                            throw new Error('Task not found. Please select another task ID.')
+                        }
+
                         // Merge the API row into a default object so the form always has every field it expects
                         this.task = { ...temporaryTask(), ...data[0] }
+                        this.showSelectTaskMessage = false
                     })
             } catch (error) {
                 this.err = error instanceof Error ? error.message : 'Could not load task'
+                return Promise.resolve()
             }
         },
 
