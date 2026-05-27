@@ -81,6 +81,7 @@
                                 <h5 class="card-title fw-bold">
                                     {{ task.Title }}
                                 </h5>
+                                <p class="card-subtitle mb-2 text-muted">Task</p>
                                 <p class="card-text">{{ task.Description }}</p>
                                 <p class="card-text">Due: {{ task.Time }}</p>
                             </div>
@@ -88,9 +89,11 @@
                         <div class="card task-hover" style="width: 100%" v-for="journal in getSelectedDayJournalData()"
                             :key="journal.journal_id">
                             <div class="card-body">
-                                <h5 class="card-title fw-bold">
+                                <h5 class="card-title fw-semibold">
                                     {{ journal.journal_name }}
                                 </h5>
+                                <p class="card-subtitle mb-2 text-muted">Jouranl Entry</p>
+                                <p class="card-text">{{ journal.journal_body }}</p>
                             </div>
                         </div>
                     </td>
@@ -158,7 +161,7 @@
                                 <h6 class="card-title fw-bold">
                                     {{ task.Title }}
                                 </h6>
-                                <p class="card-text">{{ task.Description }}</p>
+                                <p class="card-subtitle mb-2 text-muted">Task</p>
                                 <p class="card-text">Due: {{ task.Time }}</p>
                             </div>
                         </div>
@@ -168,6 +171,7 @@
                                 <h6 class="card-title fw-bold">
                                     {{ journal.journal_name }}
                                 </h6>
+                                <p class="card-subtitle mb-2 text-muted">Journal Entry</p>
                             </div>
                         </div>
                     </td>
@@ -245,6 +249,7 @@
                                     <h6 class="card-title fw-bold">
                                         {{ task.Title }}
                                     </h6>
+                                    <p class="card-subtitle mb-2 text-muted">Task</p>
                                 </div>
                             </div>
                             <div class="card task-hover" style="width: 100%" v-for="journal in day.journals"
@@ -253,6 +258,7 @@
                                     <h6 class="card-title fw-bold">
                                         {{ journal.journal_name }}
                                     </h6>
+                                    <p class="card-subtitle mb-2 text-muted">Journal Entry</p>
                                 </div>
                             </div>
                         </div>
@@ -283,7 +289,6 @@
 </template>
 
 <script>
-import dayTimeData from "../assets/data/calendarDayData.json";
 import monthData from "../assets/data/calendarMonthData.json";
 
 export default {
@@ -292,11 +297,10 @@ export default {
             calendarView: ["day", "week", "month"],
             selectedView: "day",
             selectedDate: new Date(), // set to the current date option
-            dayTimeData: dayTimeData,
             monthData: monthData,
-            USER_API: "/resources/api_users.php",
-            TASK_API: "/resources/api_tasks.php",
-            JOURNAL_API: "/resources/api_journals.php",
+            USER_API: "/cos30043/s103071591/proDucktiv/resources/api_users.php",
+            TASK_API: "/cos30043/s103071591/proDucktiv/resources/api_tasks.php",
+            JOURNAL_API: "/cos30043/s103071591/proDucktiv/resources/api_journals.php",
             user: null,
             tasks: [],
             journals: [],
@@ -525,6 +529,7 @@ export default {
                     return response.json();
                 })
                 .then((data) => {
+                    console.log(data);
                     this.tasks = data;
                     this.taskDbStatusMessage = "Successful :)";
                     this.taskDbError = "";
@@ -535,7 +540,7 @@ export default {
         },
         // fetch and read Journal data
         readJournalData() {
-            fetch(this.JOURNAL_API)
+            fetch(`${this.JOURNAL_API}?fld=user_id&key=${this.user.user_id}`)
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error(`HTTP error:${response.status}`);
@@ -576,13 +581,13 @@ export default {
         getSelectedDayTaskData() {
             if (!this.user) return [];
             return this.tasks.filter(task => task.Date === this.formatDateFull(this.selectedDate)
-                && task.UserId === this.user.user_id);
+                && Number(task.UserId) === Number(this.user.user_id));
         },
         // fillter task data for a date
         getTaskDataByDate(date) {
             if (!this.user) return [];
             return this.tasks.filter(task => task.Date === this.formatDateFull(date)
-                && task.UserId === this.user.user_id);
+                && Number(task.UserId) === Number(this.user.user_id));
         },
 
         // filter data Array by selected date and user id for journals

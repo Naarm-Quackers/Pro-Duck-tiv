@@ -1,162 +1,159 @@
 <template>
-    <div class="d-flex flex-column flex-md-row overflow-hidden" style="height:calc(100vh - 65px);">
+<div class="d-flex flex-column flex-md-row overflow-hidden" style="height:calc(100vh - 65px);">
 
-        <!-- Mobile sidebar toggle -->
-        <div class="d-md-none border-bottom bg-light px-3 py-2 flex-shrink-0">
-            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="offcanvas"
-                data-bs-target="#journalSidebar">
-                <i class="bi bi-journals me-1"></i> Journals
-            </button>
+    <!-- Mobile sidebar toggle -->
+    <div class="d-md-none border-bottom bg-light px-3 py-2 flex-shrink-0">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="offcanvas" data-bs-target="#journalSidebar">
+            <i class="bi bi-journals me-1"></i> Journals
+        </button>
+    </div>
+
+    <!-- Sidebar (offcanvas on mobile, inline on desktop) -->
+    <div id="journalSidebar" class="offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0"
+        style="width:240px;">
+
+        <div class="offcanvas-header d-md-none border-bottom">
+            <span class="fw-bold offcanvas-title">Journals</span>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
 
-        <!-- Sidebar (offcanvas on mobile, inline on desktop) -->
-        <div id="journalSidebar"
-            class="offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0"
-            style="width:240px;">
-
-            <div class="offcanvas-header d-md-none border-bottom">
-                <span class="fw-bold offcanvas-title">Journals</span>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-            </div>
-
-            <div class="d-none d-md-flex justify-content-between align-items-center p-3 border-bottom">
-                <span class="fw-bold">Journals</span>
-                <button class="btn btn-sm btn-outline-success" @click="openNewJournal">+ New</button>
-            </div>
-
-            <div class="d-md-none px-3 py-2 border-bottom">
-                <button class="btn btn-sm btn-outline-success w-100"
-                    data-bs-dismiss="offcanvas" @click="openNewJournal">+ New Journal</button>
-            </div>
-
-            <div class="overflow-y-auto flex-grow-1">
-                <div v-if="loadingJournals" class="p-3 text-muted small">Loading...</div>
-                <div v-else-if="journals.length === 0" class="p-3 text-muted small">No journals yet.</div>
-
-                <div v-for="j in journals" :key="j.journal_id" class="p-3 border-bottom"
-                    :class="activeJournal?.journal_id === j.journal_id ? 'bg-primary text-white' : ''"
-                    style="cursor:pointer;" data-bs-dismiss="offcanvas" @click="loadJournal(j)">
-                    <div class="small fw-medium text-truncate">{{ j.journal_name }}</div>
-                    <div class="d-flex align-items-center gap-1 mt-1">
-                        <span class="small"
-                            :class="activeJournal?.journal_id === j.journal_id ? 'text-white-50' : 'text-muted'">
-                            {{ formatSidebarDate(j.journal_date) }}
-                        </span>
-                        <span v-if="j.journal_status"
-                            :class="statusBadgeClass(j.journal_status, activeJournal?.journal_id === j.journal_id)"
-                            class="badge rounded-pill text-capitalize" style="font-size:10px;">
-                            {{ j.journal_status }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
+        <div class="d-none d-md-flex justify-content-between align-items-center p-3 border-bottom">
+            <span class="fw-bold">Journals</span>
+            <button class="btn btn-sm btn-outline-success" @click="openNewJournal">+ New</button>
         </div>
 
-        <!-- Main area -->
-        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-
-            <!-- Empty state -->
-            <div v-if="!activeJournal && !creatingNew"
-                class="d-flex flex-column align-items-center justify-content-center flex-grow-1 gap-2 text-muted">
-                <p class="mb-0">Select a journal or create a new one.</p>
-                <button class="btn btn-success btn-sm" @click="openNewJournal">New Journal</button>
-            </div>
-
-            <!-- Editor -->
-            <div v-else class="d-flex flex-column flex-grow-1 overflow-hidden">
-
-                <!-- Toolbar -->
-                <div class="d-flex flex-column border-bottom bg-white flex-shrink-0">
-                    <div class="d-flex flex-wrap align-items-center gap-2 p-2">
-                        <input v-model="form.journal_name" class="form-control form-control-sm"
-                            placeholder="Journal name" maxlength="120" style="min-width:120px;flex:1;"
-                            @input="markDirty" />
-                        <input v-model="form.journal_date" type="date" class="form-control form-control-sm"
-                            style="width:160px;" @change="markDirty" />
-                        <span class="badge text-bg-secondary text-nowrap">
-                            {{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }}
-                        </span>
-                        <button class="btn btn-sm text-nowrap"
-                            :class="isDirty || creatingNew ? 'btn-primary' : 'btn-outline-secondary'" :disabled="saving"
-                            @click="saveJournal">
-                            {{ saving ? 'Saving…' : isDirty || creatingNew ? 'Save' : 'Saved ✓' }}
-                        </button>
-                        <button v-if="activeJournal && !creatingNew" class="btn btn-sm btn-outline-danger"
-                            @click="showDeleteModal = true">
-                            Delete
-                        </button>
-                    </div>
-
-                    <!-- Status row -->
-                    <div class="d-flex align-items-center gap-2 px-2 pb-2">
-                        <span class="small text-muted text-nowrap">How was today?</span>
-                        <button v-for="s in STATUS_OPTIONS" :key="s.value" class="btn btn-sm"
-                            :class="form.journal_status === s.value ? s.activeClass : s.inactiveClass"
-                            @click="setStatus(s.value)">
-                            {{ s.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Writing area -->
-                <div class="flex-grow-1 d-flex flex-column p-4 overflow-hidden">
-                    <textarea ref="textareaRef" v-model="pages[currentPage]" class="flex-grow-1 w-100 border-0"
-                        style="resize:none;outline:none;font-size:15px;line-height:1.8;overflow:hidden;"
-                        placeholder="Begin writing…" @keydown="onKeydown" @input="onInput"></textarea>
-
-                    <!-- Bottom bar -->
-                    <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2 flex-shrink-0">
-                        <Paginate v-if="pages.length > 1" :page-count="pages.length" :click-handler="goToPage"
-                            prev-text="← Prev" next-text="Next →" container-class="pagination pagination-sm mb-0"
-                            page-class="page-item" page-link-class="page-link" prev-class="page-item"
-                            prev-link-class="page-link" next-class="page-item" next-link-class="page-link"
-                            :force-page="currentPage + 1" />
-                        <div v-else></div>
-                        <span class="text-muted" style="font-size:11px;">Page {{ currentPage + 1 }}</span>
-                    </div>
-                </div>
-
-            </div>
+        <div class="d-md-none px-3 py-2 border-bottom">
+            <button class="btn btn-sm btn-outline-success w-100" data-bs-dismiss="offcanvas" @click="openNewJournal">+
+                New Journal</button>
         </div>
 
-        <!-- Delete modal -->
-        <div v-if="showDeleteModal" class="modal d-block" style="background:rgba(0,0,0,0.5);"
-            @click.self="showDeleteModal = false">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Delete journal?</h5>
-                        <button class="btn-close" @click="showDeleteModal = false"></button>
-                    </div>
-                    <div class="modal-body text-muted small">
-                        Permanently delete <strong class="text-dark">{{ activeJournal?.journal_name }}</strong>? This
-                        cannot be undone.
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-sm btn-secondary" @click="showDeleteModal = false">Cancel</button>
-                        <button class="btn btn-sm btn-danger" @click="deleteJournal">Delete</button>
-                    </div>
+        <div class="overflow-y-auto flex-grow-1">
+            <div v-if="loadingJournals" class="p-3 text-muted small">Loading...</div>
+            <div v-else-if="journals.length === 0" class="p-3 text-muted small">No journals yet.</div>
+
+            <div v-for="j in journals" :key="j.journal_id" class="p-3 border-bottom"
+                :class="activeJournal?.journal_id === j.journal_id ? 'bg-primary text-white' : ''"
+                style="cursor:pointer;" data-bs-dismiss="offcanvas" @click="loadJournal(j)">
+                <div class="small fw-medium text-truncate">{{ j.journal_name }}</div>
+                <div class="d-flex align-items-center gap-1 mt-1">
+                    <span class="small"
+                        :class="activeJournal?.journal_id === j.journal_id ? 'text-white-50' : 'text-muted'">
+                        {{ formatSidebarDate(j.journal_date) }}
+                    </span>
+                    <span v-if="j.journal_status"
+                        :class="statusBadgeClass(j.journal_status, activeJournal?.journal_id === j.journal_id)"
+                        class="badge rounded-pill text-capitalize" style="font-size:10px;">
+                        {{ j.journal_status }}
+                    </span>
                 </div>
             </div>
         </div>
-
-        <!-- Toast -->
-        <transition name="fade">
-            <div v-if="toast.show" class="position-fixed bottom-0 end-0 m-3" style="z-index:1080;">
-                <div class="toast show" :class="toast.type === 'danger' ? 'text-bg-danger' : 'text-bg-dark'">
-                    <div class="toast-body">{{ toast.message }}</div>
-                </div>
-            </div>
-        </transition>
 
     </div>
+
+    <!-- Main area -->
+    <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+
+        <!-- Empty state -->
+        <div v-if="!activeJournal && !creatingNew"
+            class="d-flex flex-column align-items-center justify-content-center flex-grow-1 gap-2 text-muted">
+            <p class="mb-0">Select a journal or create a new one.</p>
+            <button class="btn btn-success btn-sm" @click="openNewJournal">New Journal</button>
+        </div>
+
+        <!-- Editor -->
+        <div v-else class="d-flex flex-column flex-grow-1 overflow-hidden">
+
+            <!-- Toolbar -->
+            <div class="d-flex flex-column border-bottom bg-white flex-shrink-0">
+                <div class="d-flex flex-wrap align-items-center gap-2 p-2">
+                    <input v-model="form.journal_name" class="form-control form-control-sm" placeholder="Journal name"
+                        maxlength="120" style="min-width:120px;flex:1;" @input="markDirty" />
+                    <input v-model="form.journal_date" type="date" class="form-control form-control-sm"
+                        style="width:160px;" @change="markDirty" />
+                    <span class="badge text-bg-secondary text-nowrap">
+                        {{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }}
+                    </span>
+                    <button class="btn btn-sm text-nowrap"
+                        :class="isDirty || creatingNew ? 'btn-primary' : 'btn-outline-secondary'" :disabled="saving"
+                        @click="saveJournal">
+                        {{ saving ? 'Saving…' : isDirty || creatingNew ? 'Save' : 'Saved ✓' }}
+                    </button>
+                    <button v-if="activeJournal && !creatingNew" class="btn btn-sm btn-outline-danger"
+                        @click="showDeleteModal = true">
+                        Delete
+                    </button>
+                </div>
+
+                <!-- Status row -->
+                <div class="d-flex align-items-center gap-2 px-2 pb-2">
+                    <span class="small text-muted text-nowrap">How was today?</span>
+                    <button v-for="s in STATUS_OPTIONS" :key="s.value" class="btn btn-sm"
+                        :class="form.journal_status === s.value ? s.activeClass : s.inactiveClass"
+                        @click="setStatus(s.value)">
+                        {{ s.label }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Writing area -->
+            <div class="flex-grow-1 d-flex flex-column p-4 overflow-hidden">
+                <textarea ref="textareaRef" v-model="pages[currentPage]" class="flex-grow-1 w-100 border-0"
+                    style="resize:none;outline:none;font-size:15px;line-height:1.8;overflow:hidden;"
+                    placeholder="Begin writing…" @keydown="onKeydown" @input="onInput"></textarea>
+
+                <!-- Bottom bar -->
+                <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2 flex-shrink-0">
+                    <Paginate v-if="pages.length > 1" :page-count="pages.length" :click-handler="goToPage"
+                        prev-text="← Prev" next-text="Next →" container-class="pagination pagination-sm mb-0"
+                        page-class="page-item" page-link-class="page-link" prev-class="page-item"
+                        prev-link-class="page-link" next-class="page-item" next-link-class="page-link"
+                        :force-page="currentPage + 1" />
+                    <div v-else></div>
+                    <span class="text-muted" style="font-size:11px;">Page {{ currentPage + 1 }}</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Delete modal -->
+    <div v-if="showDeleteModal" class="modal d-block" style="background:rgba(0,0,0,0.5);"
+        @click.self="showDeleteModal = false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete journal?</h5>
+                    <button class="btn-close" @click="showDeleteModal = false"></button>
+                </div>
+                <div class="modal-body text-muted small">
+                    Permanently delete <strong class="text-dark">{{ activeJournal?.journal_name }}</strong>? This
+                    cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm btn-secondary" @click="showDeleteModal = false">Cancel</button>
+                    <button class="btn btn-sm btn-danger" @click="deleteJournal">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <transition name="fade">
+        <div v-if="toast.show" class="position-fixed bottom-0 end-0 m-3" style="z-index:1080;">
+            <div class="toast show" :class="toast.type === 'danger' ? 'text-bg-danger' : 'text-bg-dark'">
+                <div class="toast-body">{{ toast.message }}</div>
+            </div>
+        </div>
+    </transition>
+
+</div>
 </template>
 
 <script>
 import Paginate from 'vuejs-paginate-next'
 
-const JOURNALS_API = '/resources/api_journals.php'
+const JOURNALS_API = '/cos30043/s103071591/proDucktiv/resources/api_journals.php'
 
 function getLoggedInUserId() {
     try {

@@ -3,14 +3,6 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/cos30043/s103071591/proDucktiv/',
   plugins: [vue()],
-  //base: '/cos30043/s105337347/proDucktiv/',
-   server: {
-    proxy: {
-      '/resources': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true
-      }
-    }
-  },
 })

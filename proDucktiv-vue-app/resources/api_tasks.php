@@ -132,8 +132,10 @@ if ($method === 'GET') {
 if ($method === 'POST') {
     $Title = ReadTextField($conn, $input, 'Title');
     $Type = ReadTextField($conn, $input, 'Type');
-    $Date = ToSqlNullableValue($conn, $input['Date'] ?? null);
-    $Time = ToSqlNullableValue($conn, $input['Time'] ?? null);
+    // The mercury server run php v 5.4.16 and does not support null coalescing operator (??)
+    // I have to use isset() to check if the value is set before passing it to ToSqlNullableValue() instead
+    $Date = ToSqlNullableValue($conn, isset($input['Date']) ? $input['Date'] : null);
+    $Time = ToSqlNullableValue($conn, isset($input['Time']) ? $input['Time'] : null);
     $Location = ReadTextField($conn, $input, 'Location');
     $Description = ReadTextField($conn, $input, 'Description');
     $Completed = !empty($input['Completed']) ? 1 : 0;
@@ -178,8 +180,10 @@ if ($method === 'PUT') {
 
     $Title = ReadTextField($conn, $input, 'Title');
     $Type = ReadTextField($conn, $input, 'Type');
-    $Date = ToSqlNullableValue($conn, $input['Date'] ?? null);
-    $Time = ToSqlNullableValue($conn, $input['Time'] ?? null);
+    // The mercury server run php v 5.4.16 and does not support null coalescing operator (??)
+    // I have to use isset() to check if the value is set before passing it to ToSqlNullableValue() instead
+    $Date = ToSqlNullableValue($conn, isset($input['Date']) ? $input['Date'] : null);
+    $Time = ToSqlNullableValue($conn, isset($input['Time']) ? $input['Time'] : null);
     $Location = ReadTextField($conn, $input, 'Location');
     $Description = ReadTextField($conn, $input, 'Description');
     $Completed = !empty($input['Completed']) ? 1 : 0;

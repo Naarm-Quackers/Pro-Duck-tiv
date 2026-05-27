@@ -11,20 +11,20 @@ import Calendar from "../views/Calendar.vue";
 import Journal from "../views/Journal.vue";
 
 const routes = [
-    { path: '/', component: Welcome },
-    { path: '/about', component: About },
-    { path: '/sign-in', component: SignIn },
-    { path: '/registration', component: Registration },
-    { path: '/account', component: Account },
-    { path: '/task', component: Task },
-    { path: '/task-creator', component: TaskCreator },
-    { path: '/task-editor/:id?', component: TaskEditor },
-    { path: '/calendar', component: Calendar },
-    { path: '/journal', component: Journal }
+  { path: '/', component: Welcome },
+  { path: '/about', component: About },
+  { path: '/sign-in', component: SignIn },
+  { path: '/registration', component: Registration },
+  { path: '/account', component: Account },
+  { path: '/task', component: Task },
+  { path: '/task-creator', component: TaskCreator },
+  { path: '/task-editor/:id?', component: TaskEditor },
+  { path: '/calendar', component: Calendar },
+  { path: '/journal', component: Journal }
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes,
 });
 export default router;

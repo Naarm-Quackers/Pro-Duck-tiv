@@ -1,73 +1,71 @@
 <template>
-    <div class="d-flex justify-content-center align-items-start py-4 py-md-5 px-3"
-        style="min-height:calc(100vh - 65px);">
-        <div class="w-100" style="max-width:600px;">
+<div class="d-flex justify-content-center align-items-start py-4 py-md-5 px-3" style="min-height:calc(100vh - 65px);">
+    <div class="w-100" style="max-width:600px;">
 
-            <h1 class="text-h3 font-weight-bold">Account Page</h1>
+        <h1 class="text-h3 font-weight-bold">Account Page</h1>
 
-            <p class="text-body-2 text-medium-emphasis mt-2">Manage your account information below</p>
+        <p class="text-body-2 text-medium-emphasis mt-2">Manage your account information below</p>
 
-            <div v-if="loading" class="text-muted text-center">Loading...</div>
+        <div v-if="loading" class="text-muted text-center">Loading...</div>
 
-            <!-- Error message for database -->
-            <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+        <!-- Error message for database -->
+        <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
-            <div v-else-if="user" class="card">
-                <div class="card-body p-3 p-md-4">
+        <div v-else-if="user" class="card">
+            <div class="card-body p-3 p-md-4">
 
-                    <div class="row align-items-center mb-3">
-                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">First name</div>
-                        <div class="col-12 col-sm-8">
-                            <input v-if="editing" v-model="editForm.user_first_name" class="form-control" />
-                            <span v-else>{{ user.user_first_name }}</span>
-                        </div>
+                <div class="row align-items-center mb-3">
+                    <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">First name</div>
+                    <div class="col-12 col-sm-8">
+                        <input v-if="editing" v-model="editForm.user_first_name" class="form-control" />
+                        <span v-else>{{ user.user_first_name }}</span>
                     </div>
-
-                    <div class="row align-items-center mb-3">
-                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Last name</div>
-                        <div class="col-12 col-sm-8">
-                            <input v-if="editing" v-model="editForm.user_last_name" class="form-control" />
-                            <span v-else>{{ user.user_last_name }}</span>
-                        </div>
-                    </div>
-
-                    <div class="row align-items-center mb-3">
-                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Username</div>
-                        <div class="col-12 col-sm-8">{{ user.user_name }}</div>
-                    </div>
-
-                    <div class="row align-items-center mb-3">
-                        <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Date of birth</div>
-                        <div class="col-12 col-sm-8">
-                            <input v-if="editing" v-model="editForm.user_date_of_birth"
-                                type="date" class="form-control" />
-                            <span v-else>{{ formatDate(user.user_date_of_birth) }}</span>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2 mt-4">
-                        <template v-if="editing">
-                            <button class="btn btn-success" :disabled="saving" @click="saveUser">
-                                {{ saving ? 'Saving…' : 'Save' }}
-                            </button>
-                            <button class="btn btn-danger" @click="cancelEdit">Cancel</button>
-                        </template>
-                        <button v-else class="btn btn-success" @click="startEdit">Edit</button>
-                    </div>
-
-                    <div v-if="saveError" class="alert alert-danger mt-3 mb-0 py-2 small">{{ saveError }}</div>
                 </div>
-            </div>
 
+                <div class="row align-items-center mb-3">
+                    <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Last name</div>
+                    <div class="col-12 col-sm-8">
+                        <input v-if="editing" v-model="editForm.user_last_name" class="form-control" />
+                        <span v-else>{{ user.user_last_name }}</span>
+                    </div>
+                </div>
+
+                <div class="row align-items-center mb-3">
+                    <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Username</div>
+                    <div class="col-12 col-sm-8">{{ user.user_name }}</div>
+                </div>
+
+                <div class="row align-items-center mb-3">
+                    <div class="col-12 col-sm-4 text-muted mb-1 mb-sm-0">Date of birth</div>
+                    <div class="col-12 col-sm-8">
+                        <input v-if="editing" v-model="editForm.user_date_of_birth" type="date" class="form-control" />
+                        <span v-else>{{ formatDate(user.user_date_of_birth) }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <template v-if="editing">
+                        <button class="btn btn-success" :disabled="saving" @click="saveUser">
+                            {{ saving ? 'Saving…' : 'Save' }}
+                        </button>
+                        <button class="btn btn-danger" @click="cancelEdit">Cancel</button>
+                    </template>
+                    <button v-else class="btn btn-success" @click="startEdit">Edit</button>
+                </div>
+
+                <div v-if="saveError" class="alert alert-danger mt-3 mb-0 py-2 small">{{ saveError }}</div>
+            </div>
         </div>
+
     </div>
+</div>
 </template>
 
 <script>
-const USERS_API = '/resources/api_users.php'
+const USERS_API = '/cos30043/s103071591/proDucktiv/resources/api_users.php'
 const USER_ID = getLoggedInUserId()
 
-const JOURNALS_API = '/resources/api_journals.php'
+const JOURNALS_API = '/cos30043/s103071591/proDucktiv/resources/api_journals.php'
 
 function getLoggedInUserId() {
     try {
@@ -94,8 +92,8 @@ export default {
             saving: false,
             saveError: null,
             editForm: {
-                user_first_name:   '',
-                user_last_name:    '',
+                user_first_name: '',
+                user_last_name: '',
                 user_date_of_birth: '',
             },
         }
@@ -131,8 +129,8 @@ export default {
         },
 
         startEdit() {
-            this.editForm.user_first_name    = this.user.user_first_name
-            this.editForm.user_last_name     = this.user.user_last_name
+            this.editForm.user_first_name = this.user.user_first_name
+            this.editForm.user_last_name = this.user.user_last_name
             this.editForm.user_date_of_birth = this.user.user_date_of_birth || ''
             this.saveError = null
             this.editing = true

@@ -1,72 +1,41 @@
-<template>
-    <v-container class="py-10">
-        <v-row justify="center">
-            <v-col cols="12" md="8" lg="6">
-                <v-form @submit.prevent="signIn">
-                    <v-card class="pa-6" elevation="8" rounded="x1">
-                        <h4 class="text-h6 font-weight-bold mb-3">Login</h4>
+<template><v-container class="py-10">
+    <v-row justify="center">
+        <v-col cols="12" md="8" lg="6">
+            <v-form @submit.prevent="signIn">
+                <v-card class="pa-6" elevation="8" rounded="x1">
+                    <h4 class="text-h6 font-weight-bold mb-3">Login</h4>
 
-                        <v-row dense justify="center">
-                            <v-col cols="12">
-                                <v-text-field
-                                    v-model="loginUsername"
-                                    label="Username"
-                                    type="text"
-                                    variant="outlined"
-                                    density="comfortable"
-                                    autocomplete="username"
-                                    :rules="[rules.required]"
-                                />
-                            </v-col>
+                    <v-row dense justify="center">
+                        <v-col cols="12">
+                            <v-text-field v-model="loginUsername" label="Username" type="text" variant="outlined"
+                                density="comfortable" autocomplete="username" :rules="[rules.required]" />
+                        </v-col>
 
-                            <v-col cols="12">
-                                <v-text-field
-                                    v-model="loginPassword"
-                                    label="Password"
-                                    type="password"
-                                    variant="outlined"
-                                    density="comfortable"
-                                    autocomplete="current-password"
-                                    :rules="[rules.required]"
-                                />
-                            </v-col>
+                        <v-col cols="12">
+                            <v-text-field v-model="loginPassword" label="Password" type="password" variant="outlined"
+                                density="comfortable" autocomplete="current-password" :rules="[rules.required]" />
+                        </v-col>
 
-                            <v-alert
-                                v-if="loginError"
-                                type="error"
-                                variant="tonal"
-                                class="mb-5 text-center"
-                            >{{ loginError }}</v-alert>
+                        <v-alert v-if="loginError" type="error" variant="tonal" class="mb-5 text-center">{{ loginError
+                            }}</v-alert>
 
-                            <v-col cols="12">
-                                <v-btn
-                                    type="submit"
-                                    color="primary"
-                                    size="large"
-                                    block
-                                    rounded="lg"
-                                    elevation="2"
-                                >{{ isSigningIn ? 'Signing In...' : 'Sign In' }}</v-btn>
-                            </v-col>
+                        <v-col cols="12">
+                            <v-btn type="submit" color="primary" size="large" block rounded="lg" elevation="2">{{
+                                isSigningIn ? 'Signing In...' : 'Sign In' }}</v-btn>
+                        </v-col>
 
-                            <v-col cols="12">
-                                <v-btn
-                                    to="/registration"
-                                    color="secondary"
-                                    size="large"
-                                    block
-                                    rounded="lg"
-                                    elevation="2"
-                                >Create Account</v-btn>
-                            </v-col>
-                        </v-row>
-                    </v-card>
-                </v-form>
-            </v-col>
-        </v-row>
-    </v-container>
+                        <v-col cols="12">
+                            <v-btn to="/registration" color="secondary" size="large" block rounded="lg"
+                                elevation="2">Create Account</v-btn>
+                        </v-col>
+                    </v-row>
+                </v-card>
+            </v-form>
+        </v-col>
+    </v-row>
+</v-container>
 
-    <!-- <div class="container mt-5" style="max-width: 640px;">
+<!-- <div class="container mt-5" style="max-width: 640px;">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <h1 class="h3 mb-3">Sign In</h1>
@@ -115,7 +84,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-const USERS_API = '/resources/api_users.php'
+const USERS_API = '/cos30043/s103071591/proDucktiv/resources/api_users.php'
 
 const router = useRouter()
 const loginUsername = ref('')
