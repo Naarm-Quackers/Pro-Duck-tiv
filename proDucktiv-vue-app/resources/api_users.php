@@ -60,10 +60,21 @@ if ($method === 'POST' && isset($input['action']) && $input['action'] === 'login
 	$stored = $row['user_password'];
 
 	$isValid = false;
-	if ($stored && password_get_info($stored)['algo'] !==0) {
-		$isValid = password_verify($user_password, $stored);
-	} else {
-		$isValid = ($stored === $user_password);
+	
+	// Only verify if there is stored password value
+	if (is_string($stored) && $stored !== '') {
+		// Only used for the profiles made during localhost testing, as they were hashed with password_hash
+		// CAN BE REMOVED ONCE ALL PROFILES CREATED ON LOCALHOST ARE UPDATED TO USE LEGACY HASHING OR REMOVED
+		if (function_exists('password_verify')) {
+			$isValid = password_verify($user_password, $stored);
+			// If the password needs rehashing (e.g., if the hashing algorithm has been updated), rehash and update the stored password
+		} elseif (preg_match('/^\$2[aby]\$\d\d\$/', $stored)) {
+			$isValid = (crypt($user_password, $stored) === $stored);
+		} else {
+			// Only used for the profiles made during localhost testing, as they were stored in plain text
+			// CAN BE REMOVED ONCE ALL PROFILES ARE UPDATED TO USE HASHED PASSWORDS
+			$isValid = ($stored === $user_password);
+		}
 	}
 
 	if ($isValid) {
@@ -98,7 +109,14 @@ if ($method === 'POST' && !isset($input['action'])) {
 		]);
 		exit;
 	}
-	$user_password_hashed = password_hash($user_password, PASSWORD_DEFAULT);
+	if (function_exists('password_hash')) {
+		// Only used for the profiles made during localhost testing
+		// CAN BE REMOVED ONCE ALL PROFILES CREATED ON LOCALHOST ARE UPDATED TO USE LEGACY HASHING OR REMOVED
+		$user_password_hashed = password_hash($user_password, PASSWORD_DEFAULT);
+	} else {
+		// Fallback for older PHP runtimes without password_hash (e.g. Mercury PHP 5.4)
+		$user_password_hashed = crypt($user_password, '$2y$10$abcdefghijklmnopqrstuu');
+	}
 	$sql = "INSERT INTO `$table` (user_name, user_password, user_first_name, user_last_name, user_date_of_birth) VALUES ('$user_name', '$user_password_hashed', '$user_first_name', '$user_last_name', '$user_date_of_birth')";
 
 	if (mysqli_query($conn, $sql)) {
