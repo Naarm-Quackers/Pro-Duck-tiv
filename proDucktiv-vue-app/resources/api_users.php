@@ -29,7 +29,7 @@ if ($method === 'GET') {
 	$key = isset($_GET['key']) ? $_GET['key'] : '';
 
 	$where = ($fld && $key) ? " WHERE `$fld`='" . mysqli_real_escape_string($conn, $key) . "'" : '';
-	$sql = "SELECT user_id, user_name, user_password, user_first_name, user_last_name, user_date_of_birth FROM `$table`$where";
+	$sql = "SELECT user_id, user_name, user_first_name, user_last_name, user_date_of_birth FROM `$table`$where";
 	$result = mysqli_query($conn, $sql);
 
 	$rows = [];
@@ -41,7 +41,42 @@ if ($method === 'GET') {
 	exit;
 }
 
-if ($method === 'POST') {
+// login call
+if ($method === 'POST' && isset($input['action']) && $input['action'] === 'login') {
+	// only return user_id on successful request
+	$user_name = mysqli_real_escape_string($conn, isset($input['user_name']) ? $input['user_name'] : '');
+	$user_password = isset($input['user_password']) ? $input['user_password'] : '';
+
+	$sql = "SELECT user_id, user_password FROM `$table` WHERE user_name = '$user_name' LIMIT 1";
+	$result = mysqli_query($conn, $sql);
+	$row = $result ? mysqli_fetch_assoc($result) : null;
+
+	if (!$row) {
+		http_response_code(401);
+		echo json_encode(['error' => 'Invalid credentials']);
+		exit;
+	}
+
+	$stored = $row['user_password'];
+
+	$isValid = false;
+	if ($stored && password_get_info($stored)['algo'] !==0) {
+		$isValid = password_verify($user_password, $stored);
+	} else {
+		$isValid = ($stored === $user_password);
+	}
+
+	if ($isValid) {
+		echo json_encode(['user_id' => $row['user_id']]);
+	} else  {
+		http_response_code(401);
+		echo json_encode(['error' => 'Invalid credentials']);
+	}
+	exit;
+}
+
+// registration call
+if ($method === 'POST' && !isset($input['action'])) {
 	// registration information
 	$user_name          = mysqli_real_escape_string($conn, isset($input['user_name'])          ? $input['user_name']          : '');
 	$user_password      = mysqli_real_escape_string($conn, isset($input['user_password'])      ? $input['user_password']      : '');
@@ -63,8 +98,8 @@ if ($method === 'POST') {
 		]);
 		exit;
 	}
-
-	$sql = "INSERT INTO `$table` (user_name, user_password, user_first_name, user_last_name, user_date_of_birth) VALUES ('$user_name', '$user_password', '$user_first_name', '$user_last_name', '$user_date_of_birth')";
+	$user_password_hashed = password_hash($user_password, PASSWORD_DEFAULT);
+	$sql = "INSERT INTO `$table` (user_name, user_password, user_first_name, user_last_name, user_date_of_birth) VALUES ('$user_name', '$user_password_hashed', '$user_first_name', '$user_last_name', '$user_date_of_birth')";
 
 	if (mysqli_query($conn, $sql)) {
 		echo json_encode(array('success' => true, 'id' => mysqli_insert_id($conn)));

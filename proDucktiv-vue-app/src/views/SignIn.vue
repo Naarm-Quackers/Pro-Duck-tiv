@@ -142,33 +142,44 @@ const signIn = async () => {
     loginError.value = ''
 
     if (!loginUsername.value || !loginPassword.value) {
-        loginError.value = 'Please enter both username and password.'
+        // this error message is handled by the rules
+        // loginError.value = 'Please enter both username and password.'
         return
     }
 
     isSigningIn.value = true
 
     try {
-        const response = await fetch(USERS_API)
+        // get only user_id with user_name and user_password
+        const response = await fetch(USERS_API, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'login',
+                user_name: loginUsername.value,
+                user_password: loginPassword.value,
+            }),
+        })
         
-
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`)
+            const err = await response.json().catch(() => null)
+            throw new Error(err && err.error ? err.error : `HTTP ${response.status}`)
         }
 
-        const users = await response.json()
+        // result = user_id
+        const result = await response.json()
+        if (!result.user_id) throw new Error('Invalid response from server')
+
+// - - - - - - - - - - - - - TEMPORARY CODE - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+        // get all information from user as placeholder code so program still works for everyone while refactoring is done
+        const response2 = await fetch(USERS_API)
+        const users = await response2.json()
         const rows = Array.isArray(users) ? users : []
 
         const matchedUser = rows.find(
-            (user) =>
-                String(user.user_name) === loginUsername.value &&
-                String(user.user_password) === loginPassword.value
+            (user) => String(user.user_id) === result.user_id
         )
-
-        if (!matchedUser) {
-            loginError.value = 'Invalid username or password.'
-            return
-        }
 
         const normalizedUser = {
             ...matchedUser,
@@ -180,6 +191,11 @@ const signIn = async () => {
         }
 
         localStorage.setItem('currentUser', JSON.stringify(normalizedUser))
+//
+// - - - - - - - - - - - - - TEMPORARY CODE - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
+        // localStorage.setItem('currentUserId', String(result.user_id))
         router.push('/')
     } catch (error) {
         loginError.value = error instanceof Error ? error.message : 'Sign in failed. Please try again.'
