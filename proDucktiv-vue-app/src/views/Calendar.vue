@@ -82,7 +82,9 @@
                                     {{ task.Title }}
                                 </h5>
                                 <p class="card-subtitle mb-2 text-muted">Task</p>
-                                <p class="card-text">{{ task.Description }}</p>
+                                <span class="badge rounded-pill bg-info">{{ task.Type }}</span>
+                                <p class="card-text">{{ cutOffText(task.Description) }}</p>
+
                                 <p class="card-text">Due: {{ task.Time }}</p>
                             </div>
                         </div>
@@ -93,7 +95,8 @@
                                     {{ journal.journal_name }}
                                 </h5>
                                 <p class="card-subtitle mb-2 text-muted">Jouranl Entry</p>
-                                <p class="card-text">{{ journal.journal_body }}</p>
+                                <span class="badge rounded-pill bg-warning">{{ journal.journal_status }}</span>
+                                <p class="card-text">{{ cutOffText(journal.journal_body) }}</p>
                             </div>
                         </div>
                     </td>
@@ -162,6 +165,7 @@
                                     {{ task.Title }}
                                 </h6>
                                 <p class="card-subtitle mb-2 text-muted">Task</p>
+                                <span class="badge rounded-pill bg-info">{{ task.Type }}</span>
                                 <p class="card-text">Due: {{ task.Time }}</p>
                             </div>
                         </div>
@@ -172,6 +176,7 @@
                                     {{ journal.journal_name }}
                                 </h6>
                                 <p class="card-subtitle mb-2 text-muted">Journal Entry</p>
+                                <span class="badge rounded-pill bg-warning">{{ journal.journal_status }}</span>
                             </div>
                         </div>
                     </td>
@@ -250,6 +255,7 @@
                                         {{ task.Title }}
                                     </h6>
                                     <p class="card-subtitle mb-2 text-muted">Task</p>
+                                    <span class="badge rounded-pill bg-info">{{ task.Type }}</span>
                                 </div>
                             </div>
                             <div class="card task-hover" style="width: 100%" v-for="journal in day.journals"
@@ -259,6 +265,7 @@
                                         {{ journal.journal_name }}
                                     </h6>
                                     <p class="card-subtitle mb-2 text-muted">Journal Entry</p>
+                                    <span class="badge rounded-pill bg-warning">{{ journal.journal_status }}</span>
                                 </div>
                             </div>
                         </div>
@@ -602,6 +609,13 @@ export default {
             return this.journals.filter(journal => journal.journal_date === this.formatDateFull(date)
                 && journal.user_id === this.user.user_id);
         },
+        // used for super long journal entries for the day view
+        cutOffText(text, wordLimit = 20) {
+            if (!text) return "";
+            const words = text.split(" ");
+            if (words.length <= wordLimit) return text;
+            return words.slice(0, wordLimit).join(" ") + "...";
+        }
     },
 };
 </script>
