@@ -2,13 +2,13 @@
 
 // get the HTTP method, path and body of the request
 $method = $_SERVER['REQUEST_METHOD'];
-$request = explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'));
+$request = explode('/', trim(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : '', '/'));
 $input = json_decode(file_get_contents('php://input'),true);
 // connect to the mysql database, provide the appropriate credentials
 
 $conn = mysqli_connect('feenix-mariadb.swin.edu.au', 's105341089', '080805', 's105341089_db');
 //$conn = mysqli_connect('localhost', 'root', '', 'test');
-  
+
 mysqli_set_charset($conn,'utf8');
 
 // initialise the table name accordingly
