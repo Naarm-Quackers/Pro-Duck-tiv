@@ -109,11 +109,11 @@
                     </div>
 
                     <div class="fs-2 fw-bold mt-2">
-                        {{ completedTasks }}
+                        {{ completedTasksThisWeek }}
                     </div>
 
                     <small class="text-muted">
-                        {{ completedTasks }} this week
+                        {{ completedTasksThisWeek }} this week
                     </small>
                 </div>
             </div>
@@ -332,6 +332,29 @@ export default {
         // Couunts how many tasks completed today through filtering to check complete status
         completedTasks() {
             return this.todaysTasks.filter((task) => this.isTaskComplete(task)).length
+        },
+
+        // Counts how many tasks are completed in the current week
+        completedTasksThisWeek() {
+            const now = new Date()
+            const currentDay = now.getDay() // Sunday = 0
+            const daysSinceMonday = (currentDay + 6) % 7
+            const weekStart = new Date(now)
+
+            weekStart.setHours(0, 0, 0, 0)
+            weekStart.setDate(now.getDate() - daysSinceMonday)
+
+            const weekStartKey = this.getLocalDateString(weekStart)
+            const todayKey = this.getLocalDateString(now)
+
+            return this.allTasks.filter((task) => {
+                return (
+                    this.isTaskComplete(task) &&
+                    typeof task.Date === 'string' &&
+                    task.Date >= weekStartKey &&
+                    task.Date <= todayKey
+                )
+            }).length
         },
 
         // Counts active tasks by filtering not complete status independent of due date
@@ -572,7 +595,16 @@ export default {
         },
         // Checks if task is complete based on field value, returns boolean
         isTaskComplete(task) {
-            return task.Completed === true
+            const completed = task?.Completed
+
+            if (typeof completed === 'boolean') return completed
+            if (typeof completed === 'number') return completed === 1
+            if (typeof completed === 'string') {
+                const normalized = completed.trim().toLowerCase()
+                return normalized === '1' || normalized === 'true'
+            }
+
+            return false
         },
         // Parses task date and time into due object
         getDueDateTime(task) {
