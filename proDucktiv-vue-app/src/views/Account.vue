@@ -1,6 +1,6 @@
 <template>
-<div class="d-flex justify-content-center align-items-start py-4 py-md-5 px-3" style="min-height:calc(100vh - 65px);">
-    <div class="w-100" style="max-width:600px;">
+<div class="d-flex justify-content-center align-items-start py-4 py-md-5 px-3 account-root">
+    <div class="w-100 account-container">
 
         <h1 class="text-h3 font-weight-bold">Account Page</h1>
 
@@ -179,3 +179,12 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.account-root {
+    min-height: calc(100vh - 65px);
+}
+.account-container {
+    max-width: 600px;
+}
+</style>

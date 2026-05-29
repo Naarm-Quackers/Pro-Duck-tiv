@@ -1,5 +1,5 @@
 <template>
-<div class="d-flex flex-column flex-md-row overflow-hidden" style="height:calc(100vh - 65px);">
+<div class="d-flex flex-column flex-md-row overflow-hidden journal-root">
 
     <!-- Mobile sidebar toggle -->
     <div class="d-md-none border-bottom bg-light px-3 py-2 flex-shrink-0">
@@ -9,8 +9,7 @@
     </div>
 
     <!-- Sidebar (offcanvas on mobile, inline on desktop) -->
-    <div id="journalSidebar" class="offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0"
-        style="width:240px;">
+    <div id="journalSidebar" class="offcanvas-md offcanvas-start d-flex flex-column border-end bg-light flex-shrink-0 journal-sidebar">
 
         <div class="offcanvas-header d-md-none border-bottom">
             <span class="fw-bold offcanvas-title">Journals</span>
@@ -31,9 +30,9 @@
             <div v-if="loadingJournals" class="p-3 text-muted small">Loading...</div>
             <div v-else-if="journals.length === 0" class="p-3 text-muted small">No journals yet.</div>
 
-            <div v-for="j in journals" :key="j.journal_id" class="p-3 border-bottom"
+                <div v-for="j in journals" :key="j.journal_id" class="p-3 border-bottom journal-item"
                 :class="activeJournal?.journal_id === j.journal_id ? 'bg-primary text-white' : ''"
-                style="cursor:pointer;" data-bs-dismiss="offcanvas" @click="loadJournal(j)">
+                data-bs-dismiss="offcanvas" @click="loadJournal(j)">
                 <div class="small fw-medium text-truncate">{{ j.journal_name }}</div>
                 <div class="d-flex align-items-center gap-1 mt-1">
                     <span class="small"
@@ -41,8 +40,8 @@
                         {{ formatSidebarDate(j.journal_date) }}
                     </span>
                     <span v-if="j.journal_status"
-                        :class="statusBadgeClass(j.journal_status, activeJournal?.journal_id === j.journal_id)"
-                        class="badge rounded-pill text-capitalize" style="font-size:10px;">
+                        :class="statusBadgeClass(j.journal_status, activeJournal?.journal_id === j.journal_id) + ' journal-badge'"
+                        class="badge rounded-pill text-capitalize">
                         {{ j.journal_status }}
                     </span>
                 </div>
@@ -67,13 +66,16 @@
             <!-- Toolbar -->
             <div class="d-flex flex-column border-bottom bg-white flex-shrink-0">
                 <div class="d-flex flex-wrap align-items-center gap-2 p-2">
-                    <input v-model="form.journal_name" class="form-control form-control-sm" placeholder="Journal name"
-                        maxlength="120" style="min-width:120px;flex:1;" @input="markDirty" />
-                    <input v-model="form.journal_date" type="date" class="form-control form-control-sm"
-                        style="width:160px;" @change="markDirty" />
+                    <!-- Journal name -->
+                    <input v-model="form.journal_name" class="form-control form-control-sm journal-name-input" placeholder="Journal name"
+                        maxlength="120" @input="markDirty" />
+                    <!-- Journal date -->
+                    <input v-model="form.journal_date" type="date" class="form-control form-control-sm journal-date-input"
+                        @change="markDirty" />
                     <span class="badge text-bg-secondary text-nowrap">
                         {{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }}
                     </span>
+                    <!-- Save button -->
                     <button class="btn btn-sm text-nowrap"
                         :class="isDirty || creatingNew ? 'btn-primary' : 'btn-outline-secondary'" :disabled="saving"
                         @click="saveJournal">
@@ -98,8 +100,7 @@
 
             <!-- Writing area -->
             <div class="flex-grow-1 d-flex flex-column p-4 overflow-hidden">
-                <textarea ref="textareaRef" v-model="pages[currentPage]" class="flex-grow-1 w-100 border-0"
-                    style="resize:none;outline:none;font-size:15px;line-height:1.8;overflow:hidden;"
+                <textarea ref="textareaRef" v-model="pages[currentPage]" class="flex-grow-1 w-100 border-0 journal-textarea"
                     placeholder="Begin writing…" @keydown="onKeydown" @input="onInput"></textarea>
 
                 <!-- Bottom bar -->
@@ -110,7 +111,7 @@
                         prev-link-class="page-link" next-class="page-item" next-link-class="page-link"
                         :force-page="currentPage + 1" />
                     <div v-else></div>
-                    <span class="text-muted" style="font-size:11px;">Page {{ currentPage + 1 }}</span>
+                    <span class="text-muted page-count">Page {{ currentPage + 1 }}</span>
                 </div>
             </div>
 
@@ -118,7 +119,7 @@
     </div>
 
     <!-- Delete modal -->
-    <div v-if="showDeleteModal" class="modal d-block" style="background:rgba(0,0,0,0.5);"
+    <div v-if="showDeleteModal" class="modal d-block modal-backdrop-custom"
         @click.self="showDeleteModal = false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -140,7 +141,7 @@
 
     <!-- Toast -->
     <transition name="fade">
-        <div v-if="toast.show" class="position-fixed bottom-0 end-0 m-3" style="z-index:1080;">
+        <div v-if="toast.show" class="position-fixed bottom-0 end-0 m-3 toast-z">
             <div class="toast show" :class="toast.type === 'danger' ? 'text-bg-danger' : 'text-bg-dark'">
                 <div class="toast-body">{{ toast.message }}</div>
             </div>
@@ -254,6 +255,11 @@ export default {
                 return
             }
 
+            if (!this.userId) {
+                this.showToast('Please sign in to save journals.', 'danger')
+                return
+            }
+
             this.saving = true
 
             const payload = {
@@ -272,7 +278,16 @@ export default {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
                     })
-                    if (!res.ok) throw new Error()
+                    if (!res.ok) {
+                        let errMsg = ''
+                        try {
+                            const j = await res.json()
+                            errMsg = j && j.error ? j.error : ''
+                        } catch {
+                            try { errMsg = await res.text() } catch { errMsg = '' }
+                        }
+                        throw new Error(errMsg || `HTTP ${res.status}`)
+                    }
                     saved = await res.json()
                     this.journals.unshift(saved)
                     this.activeJournal = saved
@@ -283,7 +298,16 @@ export default {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
                     })
-                    if (!res.ok) throw new Error()
+                    if (!res.ok) {
+                        let errMsg = ''
+                        try {
+                            const j = await res.json()
+                            errMsg = j && j.error ? j.error : ''
+                        } catch {
+                            try { errMsg = await res.text() } catch { errMsg = '' }
+                        }
+                        throw new Error(errMsg || `HTTP ${res.status}`)
+                    }
                     saved = await res.json()
                     const idx = this.journals.findIndex(j => j.journal_id === saved.journal_id)
                     if (idx !== -1) this.journals[idx] = saved
@@ -338,7 +362,7 @@ export default {
             this.splitBodyIntoPages(j.journal_body || '')
         },
 
-        // Page Management
+        // Page Management, Input handling and Status selection.
         splitBodyIntoPages(body) {
             if (!body) { this.pages = ['']; this.currentPage = 0; return }
             const chunks = []
@@ -418,6 +442,7 @@ export default {
             return new Date().toISOString().split('T')[0]
         },
 
+        // Toast for showing temporary messages to the user, the type is just for styling
         showToast(message, type = 'success') {
             clearTimeout(this.toastTimer)
             this.toast.show = true
@@ -439,5 +464,41 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+/* Moved inline styles into classes */
+.journal-root {
+    height: calc(100vh - 65px);
+}
+.journal-sidebar {
+    width: 240px;
+}
+.journal-item {
+    cursor: pointer;
+}
+.journal-badge {
+    font-size: 10px;
+}
+.journal-name-input {
+    min-width: 120px;
+    flex: 1;
+}
+.journal-date-input {
+    width: 160px;
+}
+.journal-textarea {
+    resize: none;
+    outline: none;
+    font-size: 15px;
+    line-height: 1.8;
+    overflow: hidden;
+}
+.page-count {
+    font-size: 11px;
+}
+.modal-backdrop-custom {
+    background: rgba(0,0,0,0.5);
+}
+.toast-z {
+    z-index: 1080;
 }
 </style>
