@@ -96,7 +96,8 @@
                             {{ isSaving ? 'Saving...' : 'Save Changes' }}
                         </button>
                         <button type="button" class="btn btn-outline-warning"
-                            @click="$router.push('/task')">Cancel</button>
+                            @click="$router.push('/task')">Cancel
+                        </button>
                     </div>
 
                 </form>
@@ -151,6 +152,7 @@ export default {
 
             // If no user in local storage, show error message to sign in
             if (!stored) {
+                this.err = 'No logged-in user found. Please sign in before editing tasks.'
                 return
             }
 
@@ -158,10 +160,9 @@ export default {
             this.currentUser = {
                 user_id: parsed.user_id,
             }
-            // If Task Editor is selected but no user is logged in, show error message instead of editing page
+            // If Task Editor is selected but no user Id, put current user as default null
         } catch (error) {
             this.currentUser = null
-            this.err = 'No logged-in user found. Please sign in before editing tasks.'
             return
         }
 
@@ -232,10 +233,6 @@ export default {
             try {
                 const userId = String(this.currentUser?.user_id)
 
-                if (!userId.trim()) {
-                    throw new Error('No logged-in user found. Please sign in before editing tasks.')
-                }
-
                 return fetch(`${this.TASKS_API}?UserId=${encodeURIComponent(userId)}`)
                     .then((res) => this.ReadJsonResponse(res))
                     .then((data) => {
@@ -259,10 +256,7 @@ export default {
                 const userId = String(this.currentUser?.user_id)
                 const selectedId = String(taskId).trim()
 
-                if (!userId.trim()) {
-                    throw new Error('No logged-in user found. Please sign in before editing tasks.')
-                }
-
+                
                 if (!selectedId) {
                     this.showSelectTaskMessage = true
                     return Promise.resolve()
@@ -300,7 +294,6 @@ export default {
             // Gets user id from local storage to use for API calling
             const userId = String(this.currentUser?.user_id)
             if (!userId.trim()) {
-                this.err = 'No logged-in user found. Please sign in before editing tasks.'
                 this.isSaving = false
                 return
             }
