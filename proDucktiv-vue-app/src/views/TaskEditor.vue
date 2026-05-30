@@ -62,11 +62,11 @@
                     <div class="row mb-3">
                         <div class="col">
                             <label for="date" class="form-label">Date</label>
-                            <input v-model="task.Date" type="date" id="date" class="form-control" />
+                            <input v-model="task.Date" type="date" id="date" class="form-control" required/>
                         </div>
                         <div class="col">
                             <label for="time" class="form-label">Time</label>
-                            <input v-model="task.Time" type="time" id="time" class="form-control" />
+                            <input v-model="task.Time" type="time" id="time" class="form-control" required/>
                         </div>
                     </div>
 
@@ -74,14 +74,14 @@
                     <div class="mb-3">
                         <label for="location" class="form-label">Location</label>
                         <input v-model="task.Location" type="text" id="location" class="form-control"
-                            placeholder="Location" />
+                            placeholder="Location" required/>
                     </div>
 
                     <!-- Description text area -->
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
                         <textarea v-model="task.Description" id="description" class="form-control" rows="4"
-                            placeholder="Task description"></textarea>
+                            placeholder="Task description" required></textarea>
                     </div>
 
                     <!-- Completion status toggle -->
