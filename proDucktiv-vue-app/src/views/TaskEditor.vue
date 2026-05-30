@@ -299,8 +299,15 @@ export default {
             }
 
             const taskId = this.task.Id
+            const selectedId = String(taskId).trim()
+            
+            if (!selectedId) {
+                this.err = 'Please select a valid task to update'
+                this.isSaving = false
+                return
+            }
             // The task API identifies the record by both the signed-in user and the task id
-            return fetch(`${this.TASKS_API}?UserId=${encodeURIComponent(userId)}&TaskId=${taskId}`, {
+            return fetch(`${this.TASKS_API}?UserId=${encodeURIComponent(userId)}&TaskId=${encodeURIComponent(selectedId)}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
