@@ -84,3 +84,14 @@ If you don’t have a personal access token for this organisations repo one can 
 - "user_id"            - User ID, number, [foreign key referencing pdt_users(user_id), cascades on delete/update]
 - "mood_date"          - Mood date, date, [one entry per user per day, unique per user]
 - "mood_value"         - Mood value, enum('up', 'down'), [required]
+
+### 'pdt_journals' Table:
+- "journal_id"         - Journal ID, number, [unique, automatically generated]
+- "user_id"            - User ID, number, [foreign key referencing pdt_users(user_id), cascades on delete/update]
+- "journal_name"       - Journal name, text, [required, max-255]
+- "journal_body"       - Journal body, long text, [optional]
+- "journal_date"       - Journal date, date, [required]
+- "journal_status"     - Journal status, text, [optional, max-10]
+- "created_at"         - Created at, timestamp, [automatically set on creation]
+
+

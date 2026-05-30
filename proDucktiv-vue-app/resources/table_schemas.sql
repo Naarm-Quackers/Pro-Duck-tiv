@@ -50,3 +50,22 @@ INSERT INTO pdt_tasks
 VALUES
 ('Revision', 'Study', '2026-05-28', '12:30:00', 'Library', 'Revise for unit test next week.', 0),
 ('Group Meeting', 'Meeting', '2026-05-24', '14:00:00', 'Online', 'Discuss project progress.', 0);
+
+-- ================================================================
+-- 'pdt_journals' Table
+-- ================================================================
+
+CREATE TABLE pdt_journals (
+    journal_id     INT          NOT NULL AUTO_INCREMENT,
+    user_id        INT          NOT NULL,
+    journal_name   VARCHAR(255) NOT NULL,
+    journal_body   LONGTEXT,
+    journal_date   DATE         NOT NULL,
+    journal_status VARCHAR(10)  DEFAULT NULL,
+    created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (journal_id),
+    CONSTRAINT fk_pdt_journals_user
+        FOREIGN KEY (user_id) REFERENCES pdt_users(user_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
