@@ -69,3 +69,16 @@ CREATE TABLE pdt_journals (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+
+-- ================================================================
+-- 'pdt_users' Table
+-- ================================================================
+CREATE TABLE pdt_users (
+    user_id             INT             NOT NULL AUTO_INCREMENT,
+    user_name           VARCHAR(255)    NOT NULL,
+    user_password       VARCHAR(255)    NOT NULL,
+    user_first_name     VARCHAR(255)    NOT NULL,
+    user_last_name      VARCHAR(255)    NOT NULL,
+    user_date_of_birth  DATE            DEFAULT NULL
+);
