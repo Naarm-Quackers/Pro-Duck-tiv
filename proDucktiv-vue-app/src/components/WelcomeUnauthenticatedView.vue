@@ -15,8 +15,8 @@
             <router-link to="/sign-in" class="btn btn-outline-success">
                 Sign In
             </router-link>
-            <router-link to="/about">
-                <button class="btn btn-outline-warning">Learn More</button>
+            <router-link to="/about" class="btn btn-outline-warning">
+                Learn More
             </router-link>
         </div>
     </div>

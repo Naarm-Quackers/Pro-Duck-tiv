@@ -518,6 +518,7 @@ export default {
         // Function handle user clicking mood buttons
         onSetMood(mood) {
             const today = this.getLocalDateString()
+            this.moodsError = ''
 
             if (!this.currentUser) {
                 return
@@ -549,7 +550,8 @@ export default {
                 })
                 .catch((error) => {
                     console.error(error)
-                    alert('Could not save mood to database.')
+                    this.moodsError =
+                        error instanceof Error ? error.message : 'Could not save mood to database.'
                 })
         },
         // Fetches tasks for current user
