@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS pdt_moods (
 );
 
 -- ================================================================
--- table_schema_task.sql
+-- 'pdt_tasks' Table
 -- ================================================================
 CREATE TABLE IF NOT EXISTS pdt_tasks (
        task_id           INT(11) NOT NULL AUTO_INCREMENT,
