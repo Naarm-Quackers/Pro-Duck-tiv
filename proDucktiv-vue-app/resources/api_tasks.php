@@ -1,5 +1,4 @@
 <?php
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -12,8 +11,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
-
-// database connection
+// connects this php api to the Feenix MariaDB database.
 $conn = mysqli_connect(
     'feenix-mariadb.swin.edu.au',
     's105341089',
@@ -34,6 +32,8 @@ if (!$conn) {
 
 mysqli_set_charset($conn, 'utf8');
 
+
+// pdt_tasks contains the task records and includes user_id as a foreign key.
 $table = 'pdt_tasks';
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -43,10 +43,14 @@ if (!is_array($input)) {
     $input = [];
 }
 
-// task id from URL
+// used when reading, updating or deleting one specific task.
+// example: api_tasks.php?TaskId=3&UserId=5
 $TaskId = isset($_GET['TaskId']) ? (int)$_GET['TaskId'] : 0;
 
-// user id must come from logged-in frontend/session
+
+// UserId must come from the active logged-in user.
+// this value links pdt_tasks.user_id to pdt_users.user_id.
+// the api refuses to continue if UserId is missing.
 $UserId = 0;
 
 if (isset($_GET['UserId'])) {
@@ -63,6 +67,8 @@ if ($UserId <= 0) {
     exit;
 }
 
+// safely reads text fields from the json request body.
+// escapes special characters before they are used in sql.
 function ReadTextField($conn, $input, $field, $fallback = '') {
     if (!isset($input[$field]) || $input[$field] === null) {
         return $fallback;
@@ -71,6 +77,9 @@ function ReadTextField($conn, $input, $field, $fallback = '') {
     return mysqli_real_escape_string($conn, trim((string)$input[$field]));
 }
 
+// converts date/time values into sql-safe values.
+// empty values become NULL.
+// valid values are escaped and wrapped in quotes.
 function ToSqlNullableValue($conn, $value) {
     if (!isset($value) || trim((string)$value) === '') {
         return 'NULL';
@@ -79,6 +88,8 @@ function ToSqlNullableValue($conn, $value) {
     return "'" . mysqli_real_escape_string($conn, trim((string)$value)) . "'";
 }
 
+// converts database column names into frontend-friendly names.
+// this makes the json easier to use inside Vue components.
 function FormatTaskRow($row) {
     return [
         'Id' => (int)$row['task_id'],
@@ -94,8 +105,8 @@ function FormatTaskRow($row) {
         'UpdatedAt' => $row['updated_at']
     ];
 }
-
-// GET: read tasks for current user
+// if TaskId is provided, read one task owned by this user, otherwise, read all tasks owned by this user.
+// user_id filtering prevents users from seeing other users' tasks.
 if ($method === 'GET') {
     if ($TaskId > 0) {
         $sql = "SELECT * FROM `$table`
@@ -128,22 +139,28 @@ if ($method === 'GET') {
     exit;
 }
 
-// POST: create task for current user
+// reads json data sent by Vue, validates that all required fields are filled.
+// inserts a new task linked to the current UserId.
 if ($method === 'POST') {
     $Title = ReadTextField($conn, $input, 'Title');
     $Type = ReadTextField($conn, $input, 'Type');
-    // The mercury server run php v 5.4.16 and does not support null coalescing operator (??)
-    // I have to use isset() to check if the value is set before passing it to ToSqlNullableValue() instead
-    $Date = ToSqlNullableValue($conn, isset($input['Date']) ? $input['Date'] : null);
-    $Time = ToSqlNullableValue($conn, isset($input['Time']) ? $input['Time'] : null);
+    $Date = ToSqlNullableValue($conn, isset($input['Date']) ? $input['Date'] : null); // required field, validated below
+    $Time = ToSqlNullableValue($conn, isset($input['Time']) ? $input['Time'] : null); // required field, validated below
     $Location = ReadTextField($conn, $input, 'Location');
     $Description = ReadTextField($conn, $input, 'Description');
     $Completed = !empty($input['Completed']) ? 1 : 0;
 
-    if ($Title === '' || $Type === '') {
+    if (
+        $Title === '' ||
+        $Type === '' ||
+        empty($input['Date']) ||
+        empty($input['Time']) ||
+        $Location === '' ||
+        $Description === ''
+    ) {
         echo json_encode([
             'success' => false,
-            'error' => 'title and type are required'
+            'error' => 'all task fields are required'
         ]);
         exit;
     }
@@ -168,7 +185,8 @@ if ($method === 'POST') {
     exit;
 }
 
-// PUT: update only the current user's task
+// validates the full updated task data, updates only the task matching both task_id and user_id.
+// this prevents users from editing tasks that do not belong to them.
 if ($method === 'PUT') {
     if ($TaskId <= 0) {
         echo json_encode([
@@ -180,18 +198,23 @@ if ($method === 'PUT') {
 
     $Title = ReadTextField($conn, $input, 'Title');
     $Type = ReadTextField($conn, $input, 'Type');
-    // The mercury server run php v 5.4.16 and does not support null coalescing operator (??)
-    // I have to use isset() to check if the value is set before passing it to ToSqlNullableValue() instead
-    $Date = ToSqlNullableValue($conn, isset($input['Date']) ? $input['Date'] : null);
-    $Time = ToSqlNullableValue($conn, isset($input['Time']) ? $input['Time'] : null);
+    $Date = ToSqlNullableValue($conn, isset($input['Date']) ? $input['Date'] : null); // required field, validated below
+    $Time = ToSqlNullableValue($conn, isset($input['Time']) ? $input['Time'] : null); // required field, validated below
     $Location = ReadTextField($conn, $input, 'Location');
     $Description = ReadTextField($conn, $input, 'Description');
     $Completed = !empty($input['Completed']) ? 1 : 0;
 
-    if ($Title === '' || $Type === '') {
+    if (
+        $Title === '' ||
+        $Type === '' ||
+        empty($input['Date']) ||
+        empty($input['Time']) ||
+        $Location === '' ||
+        $Description === ''
+    ) {
         echo json_encode([
             'success' => false,
-            'error' => 'title and type are required'
+            'error' => 'all task fields are required'
         ]);
         exit;
     }
@@ -223,7 +246,7 @@ if ($method === 'PUT') {
     exit;
 }
 
-// DELETE: delete only the current user's task
+// deletes only the task matching both task_id and user_id, this protects task ownership.
 if ($method === 'DELETE') {
     if ($TaskId <= 0) {
         echo json_encode([
