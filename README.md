@@ -99,4 +99,17 @@ If you don’t have a personal access token for this organisations repo one can 
 - "journal_status"     - Journal status, text, [optional, max-10]
 - "created_at"         - Created at, timestamp, [automatically set on creation]
 
+### 'pdt_tasks' Table:
+- "task_id"            - Task ID, number, [unique, automatically generated]
+- "user_id"            - User ID, number, [foreign key referencing pdt_users(user_id), cascades on delete/update] 
+- "task_title"         - Task title, text, [required, max-250]
+- "task_type"          - Task type, text, [required, max-100]
+- "task_date"          - Due date, date, [required]
+- "task_time"          - Due time, time, [required]
+- "task_location"      - Task location, text, [required, max-225]
+- "task_description"   - Task description, text, [required]
+- "task_completed"     - Task completion status, boolean, [default false (0)]
+- "created_at"         - Created at, timestamp, [automatically set on creation]
+- "updated_at"         - Updated at, timestamp, [updated when task is modified]
+
 
