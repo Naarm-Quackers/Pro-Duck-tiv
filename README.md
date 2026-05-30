@@ -29,9 +29,13 @@ If you don’t have a personal access token for this organisations repo one can 
 ### Adam:
 - [ ] User Mood Table
 - [ ] Welcome
+- [ ] Welcome Unauthenticated View (Public landing page)
+- [ ] WelcomeAuthenticatedView (Dashboard)
 - [ ] Task Editor
 
 ### Amy:
+- [ ] User Task Table
+- [ ] Task
 - [ ] Task Creation
 
 ### Eilia:
@@ -45,6 +49,7 @@ If you don’t have a personal access token for this organisations repo one can 
 - [ ] Sign Up
 
 ### Justin:
+- [ ] User Journal Table
 - [ ] Journal
 - [ ] Account
 

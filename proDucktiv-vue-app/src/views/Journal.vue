@@ -363,6 +363,7 @@ export default {
         },
 
         // Page Management, Input handling and Status selection.
+        //handles page splitting when loading a journal.
         splitBodyIntoPages(body) {
             if (!body) { this.pages = ['']; this.currentPage = 0; return }
             const chunks = []
@@ -375,6 +376,7 @@ export default {
             this.currentPage = 0
         },
 
+        //Backspace handle for merging pages
         onKeydown(e) {
             if (e.key !== 'Backspace') return
             const ta = this.$refs.textareaRef
@@ -394,6 +396,7 @@ export default {
             }
         },
 
+        //If input exceeds the characaterlimit, create a new page
         onInput() {
             const text = this.pages[this.currentPage]
             if (text.length > PAGE_CHAR_LIMIT) {
