@@ -36,11 +36,11 @@
 
                             <div class="d-flex justify-content-between mt-1">
                                 <small class="text-muted">
-                                    {{ completedTasks }} completed today
+                                    {{ completedTasksToday }} completed today
                                 </small>
 
                                 <small class="text-muted">
-                                    {{ todaysTasks.length - completedTasks }} remaining
+                                    {{ todaysTasks.length - completedTasksToday }} remaining
                                 </small>
                             </div>
                         </div>
@@ -109,7 +109,7 @@
                     </div>
 
                     <div class="fs-2 fw-bold mt-2">
-                        {{ completedTasksThisWeek }}
+                        {{ completedTasks }}
                     </div>
 
                     <small class="text-muted">
@@ -192,19 +192,8 @@
                         <li v-for="task in todaysTasks" :key="task.Id" class="list-group-item">
                             {{ task.Title }}
 
-                            <span class="badge ms-2" :class="isTaskComplete(task)
-                                    ? 'bg-success'
-                                    : isTaskOverdue(task)
-                                        ? 'bg-danger'
-                                        : 'bg-secondary'
-                                ">
-                                {{
-                                    isTaskComplete(task)
-                                        ? 'Done'
-                                        : isTaskOverdue(task)
-                                ? 'Overdue'
-                                : 'Active'
-                                }}
+                            <span class="badge ms-2" :class="isTaskComplete(task) ? 'bg-success' : isTaskOverdue(task) ? 'bg-danger' : 'bg-secondary'">
+                                {{ isTaskComplete(task) ? 'Done' : isTaskOverdue(task) ? 'Overdue' : 'Active'}}
                             </span>
                         </li>
                     </ul>
@@ -329,32 +318,45 @@ export default {
             return this.allTasks.filter((task) => task.Date === today)
         },
 
-        // Couunts how many tasks completed today through filtering to check complete status
+        // All completed tasks regardless of due date
         completedTasks() {
-            return this.todaysTasks.filter((task) => this.isTaskComplete(task)).length
+            return this.allTasks.filter((task) => this.isTaskComplete(task)).length
         },
 
+        // Filters today's tasks to get number of completed
+        completedTasksToday() {
+            return this.todaysTasks.filter((task) => this.isTaskComplete(task)).length
+        },
+        
         // Counts how many tasks are completed in the current week
         completedTasksThisWeek() {
             const now = new Date()
-            const currentDay = now.getDay() // Sunday = 0
-            const daysSinceMonday = (currentDay + 6) % 7
-            const weekStart = new Date(now)
 
+            const currentDay = now.getDay() // Sunday = 0, Monday = 1, ..., Saturday = 6
+            const daysSinceMonday = (currentDay + 6) % 7
+            
+            // Calculate the start of the week (Monday) and end of the week (Sunday) 
+            const weekStart = new Date(now)
             weekStart.setHours(0, 0, 0, 0)
             weekStart.setDate(now.getDate() - daysSinceMonday)
 
-            const weekStartKey = this.getLocalDateString(weekStart)
-            const todayKey = this.getLocalDateString(now)
+            const weekEnd = new Date(weekStart)
+            weekEnd.setDate(weekStart.getDate() + 6)
+            weekEnd.setHours(23, 59, 59, 999)
 
+            // Convert week start and end to local date strings for comparison with task dates
+            const weekStartKey = this.getLocalDateString(weekStart)
+            const weekEndKey = this.getLocalDateString(weekEnd)
+
+            // Filters to tasks that are complete and due date falls within the current week
             return this.allTasks.filter((task) => {
                 return (
                     this.isTaskComplete(task) &&
                     typeof task.Date === 'string' &&
                     task.Date >= weekStartKey &&
-                    task.Date <= todayKey
+                    task.Date <= weekEndKey
                 )
-            }).length
+            }).length  // Counts the length of results
         },
 
         // Counts active tasks by filtering not complete status independent of due date
@@ -513,7 +515,7 @@ export default {
                 })
         },
 
-
+        // Function handle user clicking mood buttons
         onSetMood(mood) {
             const today = this.getLocalDateString()
 
@@ -598,12 +600,6 @@ export default {
             const completed = task?.Completed
 
             if (typeof completed === 'boolean') return completed
-            if (typeof completed === 'number') return completed === 1
-            if (typeof completed === 'string') {
-                const normalized = completed.trim().toLowerCase()
-                return normalized === '1' || normalized === 'true'
-            }
-
             return false
         },
         // Parses task date and time into due object
