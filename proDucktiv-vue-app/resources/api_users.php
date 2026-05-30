@@ -47,10 +47,12 @@ if ($method === 'POST' && isset($input['action']) && $input['action'] === 'login
 	$user_name = mysqli_real_escape_string($conn, isset($input['user_name']) ? $input['user_name'] : '');
 	$user_password = isset($input['user_password']) ? $input['user_password'] : '';
 
+	// attempt to find user id and password for entered username
 	$sql = "SELECT user_id, user_password FROM `$table` WHERE user_name = '$user_name' LIMIT 1";
 	$result = mysqli_query($conn, $sql);
 	$row = $result ? mysqli_fetch_assoc($result) : null;
 
+	// error if that username does not exist
 	if (!$row) {
 		http_response_code(401);
 		echo json_encode(['error' => 'Invalid credentials']);
